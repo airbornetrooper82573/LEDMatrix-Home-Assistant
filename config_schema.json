@@ -7,12 +7,6 @@
       "type": "boolean",
       "default": true
     },
-    "display_duration": {
-      "type": "number",
-      "default": 20,
-      "minimum": 1,
-      "maximum": 300
-    },
     "ha_url": {
       "type": "string",
       "description": "Home Assistant URL, e.g. http://192.168.1.50:8123",
@@ -29,6 +23,26 @@
       "type": "boolean",
       "default": true,
       "description": "Verify HTTPS certificates when connecting to Home Assistant."
+    },
+    "connection_setup": {
+      "type": "string",
+      "title": "Home Assistant Connection",
+      "default": "",
+      "x-widget": "ha-connection-setup",
+      "description": "Step 1: validate the Home Assistant URL and Long-Lived Access Token. The remaining plugin settings stay locked until validation succeeds."
+    },
+    "entity_browser": {
+      "type": "string",
+      "title": "Home Assistant Entity Browser",
+      "default": "",
+      "x-widget": "ha-entity-browser",
+      "description": "After entering the Home Assistant URL and token, search Home Assistant by friendly name, entity ID, domain, state, device class, or unit and add results to the plugin."
+    },
+    "display_duration": {
+      "type": "number",
+      "default": 20,
+      "minimum": 1,
+      "maximum": 300
     },
     "request_timeout": {
       "type": "number",
@@ -710,13 +724,6 @@
         "priority"
       ],
       "maxItems": 50
-    },
-    "entity_browser": {
-      "type": "string",
-      "title": "Home Assistant Entity Browser",
-      "default": "",
-      "x-widget": "ha-entity-browser",
-      "description": "After entering the Home Assistant URL and token, search Home Assistant by friendly name, entity ID, domain, state, device class, or unit and add results to the plugin."
     }
   },
   "required": [
