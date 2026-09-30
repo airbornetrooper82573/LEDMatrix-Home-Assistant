@@ -431,8 +431,12 @@
             "description": "Choose visually with the color picker."
           },
           "enable_scroll": {
-            "type": "boolean",
-            "description": "Override global scrolling for this item."
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Override global scrolling for this item. Leave unset to inherit the global scrolling setting.",
+            "default": null
           },
           "scroll_speed": {
             "type": "number",
@@ -548,8 +552,12 @@
             "description": "Choose visually with the color picker."
           },
           "enable_scroll": {
-            "type": "boolean",
-            "description": "Override global scrolling for this item."
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Override global scrolling for this item. Leave unset to inherit the global scrolling setting.",
+            "default": null
           },
           "scroll_speed": {
             "type": "number",
@@ -693,8 +701,12 @@
             "description": "Choose visually with the color picker."
           },
           "enable_scroll": {
-            "type": "boolean",
-            "description": "Override global scrolling for this item."
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "Override global scrolling for this item. Leave unset to inherit the global scrolling setting.",
+            "default": null
           },
           "scroll_speed": {
             "type": "number",
