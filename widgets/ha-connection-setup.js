@@ -70,6 +70,8 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
        }
        diag.textContent='Endpoint: '+(payload.endpoint||String(url).replace(/\/$/,'')+'/api/')+
          (payload.http_status?'\nHTTP status: '+payload.http_status:'')+
+         (payload.token_length!==undefined?'\nToken characters sent: '+payload.token_length:'')+
+         (payload.token_whitespace_removed?'\nWhitespace trimmed from pasted token: yes':'')+
          (payload.message?'\nResponse: '+payload.message:'')+
          (payload.error?'\nError: '+payload.error:'');
        if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant validation failed.');
