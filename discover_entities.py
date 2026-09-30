@@ -2,9 +2,11 @@
 """Discover Home Assistant entities for the LEDMatrix configuration UI."""
 
 import json
+import os
 import ssl
 import sys
 import urllib.request
+from pathlib import Path
 
 
 def fail(message):
@@ -18,6 +20,15 @@ def main():
         params = json.loads(raw) if raw else {}
     except Exception as exc:
         return fail(f"Invalid request: {exc}")
+
+    if not params.get("ha_url") or not params.get("ha_token"):
+        try:
+            root = Path(os.environ.get("LEDMATRIX_ROOT", "."))
+            with open(root / "config" / "config.json", "r", encoding="utf-8") as handle:
+                saved = json.load(handle).get("home-assistant", {})
+            params = {**saved, **params}
+        except Exception:
+            pass
 
     ha_url = str(params.get("ha_url") or "").rstrip("/")
     token = str(params.get("ha_token") or "")
