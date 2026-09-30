@@ -45,7 +45,11 @@ def main():
     query = str(params.get("query") or "").strip().lower()
     domain = str(params.get("domain") or "").strip().lower()
     mode = str(params.get("mode") or "validate").strip().lower()
-    verify_ssl = bool(params.get("verify_ssl", True))
+    raw_verify_ssl = params.get("verify_ssl", True)
+    if isinstance(raw_verify_ssl, str):
+        verify_ssl = raw_verify_ssl.strip().lower() not in ("false", "0", "no", "off", "")
+    else:
+        verify_ssl = bool(raw_verify_ssl)
 
     if not ha_url.startswith(("http://", "https://")):
         return fail("Enter a valid Home Assistant URL first.", interactive_request)
