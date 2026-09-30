@@ -133,6 +133,114 @@ class HomeAssistantPlugin(BasePlugin):
             self.W, self.H, len(self.entity_cards), len(self.calendar_cards), len(self.event_rules)
         )
 
+    def on_config_change(self, new_config: Dict[str, Any]) -> None:
+        """Apply saved settings immediately without restarting LEDMatrix."""
+        old_connection = (
+            self.ha_url,
+            self.ha_token,
+            self.verify_ssl,
+            self.enable_realtime_events,
+        )
+        old_font_sizes = (
+            self.heading_font_size,
+            self.title_font_size,
+            self.subtitle_font_size,
+        )
+
+        super().on_config_change(new_config)
+        config = self.config
+
+        self.ha_url = str(config.get("ha_url", "")).rstrip("/")
+        self.ha_token = str(config.get("ha_token", ""))
+        self.verify_ssl = bool(config.get("verify_ssl", True))
+        self.request_timeout = max(1.0, float(config.get("request_timeout", 8)))
+
+        self.entity_cards = list(config.get("entities", []))
+        self.calendar_cards = list(config.get("calendars", []))
+        self.event_rules = list(config.get("event_notifications", []))
+
+        self.show_entities = bool(config.get("show_entities", True))
+        self.show_calendars = bool(config.get("show_calendars", True))
+        self.enable_realtime_events = bool(config.get("enable_realtime_events", True))
+        self.notification_priority = bool(
+            config.get("notification_priority", config.get("live_priority", True))
+        )
+        self.notification_duration = max(1.0, float(config.get("notification_duration", 10)))
+        self.notification_queue_size = max(1, int(config.get("notification_queue_size", 20)))
+        self.default_cooldown = max(0.0, float(config.get("notification_cooldown", 15)))
+        self.max_calendar_events = max(1, int(config.get("max_calendar_events", 10)))
+
+        self.display_layout = str(config.get("layout", "auto"))
+        self.show_heading = bool(config.get("show_heading", True))
+        self.title_font_size = max(6, int(config.get("title_font_size", 11)))
+        self.subtitle_font_size = max(5, int(config.get("subtitle_font_size", 7)))
+        self.heading_font_size = max(5, int(config.get("heading_font_size", 6)))
+        self.row_gap = max(0, int(config.get("row_gap", 1)))
+
+        self.enable_scroll = bool(config.get("enable_scroll", True))
+        self.scroll_speed = max(1.0, float(config.get("scroll_speed", 14)))
+        self.scroll_pause = max(0.0, float(config.get("scroll_pause", 1.25)))
+        self.scroll_gap = max(8, int(config.get("scroll_gap", 28)))
+        self.scroll_trigger_ratio = min(
+            1.0, max(0.4, float(config.get("scroll_trigger_ratio", 0.85)))
+        )
+
+        self.entity_heading_color = config.get("entity_heading_color", [120, 220, 130])
+        self.entity_title_color = config.get("entity_title_color", [255, 255, 255])
+        self.entity_subtitle_color = config.get("entity_subtitle_color", [180, 180, 180])
+        self.calendar_heading_color = config.get("calendar_heading_color", [90, 190, 255])
+        self.calendar_title_color = config.get("calendar_title_color", [255, 255, 255])
+        self.calendar_subtitle_color = config.get("calendar_subtitle_color", [180, 180, 180])
+        self.notification_heading_color = config.get("notification_heading_color", [255, 90, 70])
+        self.notification_title_color = config.get("notification_title_color", [255, 255, 255])
+        self.notification_subtitle_color = config.get("notification_subtitle_color", [220, 220, 220])
+
+        new_font_sizes = (
+            self.heading_font_size,
+            self.title_font_size,
+            self.subtitle_font_size,
+        )
+        if new_font_sizes != old_font_sizes:
+            self._font_heading = self._load_font(self.heading_font_size)
+            self._font_title = self._load_font(self.title_font_size)
+            self._font_subtitle = self._load_font(self.subtitle_font_size)
+
+        new_connection = (
+            self.ha_url,
+            self.ha_token,
+            self.verify_ssl,
+            self.enable_realtime_events,
+        )
+        if new_connection != old_connection:
+            self._ws_stop.set()
+            thread = self._ws_thread
+            if thread and thread.is_alive() and thread is not threading.current_thread():
+                thread.join(timeout=1.0)
+            self._ws_thread = None
+            self._ws_connected = False
+            self._ws_stop = threading.Event()
+            if self.enable_realtime_events:
+                self._start_websocket_thread()
+
+        self._rotation_items = []
+        self._rotation_index = 0
+        self.current_item = None
+        self.last_update = 0.0
+        self.last_error = ""
+
+        # Rebuild content immediately so saved changes appear on the matrix
+        # without restarting the display service.
+        try:
+            self.update()
+        except Exception as exc:
+            self.last_error = str(exc)
+            self.logger.warning("Immediate Home Assistant refresh after config save failed: %s", exc)
+
+        self.logger.info(
+            "Home Assistant configuration applied live; entities=%d calendars=%d rules=%d",
+            len(self.entity_cards), len(self.calendar_cards), len(self.event_rules)
+        )
+
     def _load_font(self, size: int):
         for path in (
             Path("assets/fonts/PressStart2P-Regular.ttf"),
