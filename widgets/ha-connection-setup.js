@@ -56,7 +56,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      try{
        var resp=await fetch('/api/v3/plugins/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
          plugin_id:pluginId,action_id:'discover-entities',
-         params:{mode:'validate',ha_url:url,ha_token:token,verify_ssl:verify!==false}
+         params:{mode:'validate',ha_url:url,ha_token:token,verify_ssl:(verify!==false?'true':'false')}
        })});
        var data=await resp.json();
        var payload=null;
