@@ -1,29 +1,68 @@
 {
   "id": "home-assistant",
   "name": "Home Assistant",
-  "version": "1.1.0",
-  "description": "Native Home Assistant display for LEDMatrix with entities, calendars, real-time priority notifications, per-item colors, and configurable wide-matrix scrolling.",
+  "version": "1.2.0",
+  "description": "Native Home Assistant display for LEDMatrix with searchable entity discovery, visual color controls, calendars, real-time priority notifications, and configurable wide-matrix scrolling.",
   "author": "airbornetrooper82573",
   "entry_point": "manager.py",
   "class_name": "HomeAssistantPlugin",
   "category": "home-automation",
-  "tags": ["home-assistant","smart-home","calendar","notifications","sensors","marquee"],
-  "display_modes": ["home-assistant","home-assistant-alert"],
+  "tags": [
+    "home-assistant",
+    "smart-home",
+    "calendar",
+    "notifications",
+    "sensors",
+    "marquee"
+  ],
+  "display_modes": [
+    "home-assistant",
+    "home-assistant-alert"
+  ],
   "update_interval": 30,
   "config_schema": "config_schema.json",
-  "compatible_versions": [">=2.0.0"],
+  "compatible_versions": [
+    ">=2.0.0"
+  ],
   "versions": [
+    {
+      "version": "1.2.0",
+      "released": "2026-09-30",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Add searchable Home Assistant entity discovery with one-click add actions, visual color pickers instead of typed hex values, masked token/URL widgets, and easier alert state filters."
+    },
     {
       "version": "1.1.0",
       "released": "2026-09-29",
       "ledmatrix_min": "2.0.0",
-      "notes": "Add native live-priority notification takeover, per-rule priority, global/per-item text colors, and per-item scrolling controls."
+      "notes": "Add native live-priority notification takeover, per-rule priority, global/per-item text colors, and per-item scrolling controls.",
+      "ledmatrix_min_version": "2.0.0"
     },
     {
       "version": "1.0.0",
       "released": "2026-09-29",
       "ledmatrix_min": "2.0.0",
       "notes": "Initial release with REST entity/calendar cards, WebSocket state-change notifications, wildcard rules, cooldowns, and wide-matrix scrolling."
+    }
+  ],
+  "widgets": [
+    {
+      "name": "ha-entity-browser",
+      "script": "ha-entity-browser.js",
+      "description": "Search Home Assistant entities and add them to entity, calendar, or notification configuration."
+    }
+  ],
+  "web_ui_actions": [
+    {
+      "id": "discover-entities",
+      "type": "script",
+      "title": "Test Home Assistant Entity Discovery",
+      "description": "Queries Home Assistant using the configured URL and token. The Entity Browser above uses this same backend.",
+      "button_text": "Test Entity Discovery",
+      "icon": "fas fa-search",
+      "color": "blue",
+      "script": "discover_entities.py",
+      "oauth_flow": false
     }
   ]
 }
