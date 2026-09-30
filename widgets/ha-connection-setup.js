@@ -31,6 +31,13 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      '#'+id+'_box input,#'+id+'_box select,#'+id+'_box button{color:inherit}'+
      '#'+id+'_box input[type="url"],#'+id+'_box input[type="password"],#'+id+'_box input[type="text"]{background:var(--input-bg,#111827);color:var(--text-color,#f9fafb);border-color:var(--border-color,#4b5563)}'+
      '#'+id+'_toggle{background:transparent!important;color:inherit!important}'+
+     '#plugin-config-form-'+pluginId+' input,#plugin-config-form-'+pluginId+' select,#plugin-config-form-'+pluginId+' textarea{background:var(--input-bg,#111827);color:var(--text-color,#f9fafb);border-color:var(--border-color,#4b5563)}'+
+     '#plugin-config-form-'+pluginId+' table,#plugin-config-form-'+pluginId+' td,#plugin-config-form-'+pluginId+' th{color:inherit;border-color:var(--border-color,#4b5563)}'+
+     '#plugin-config-form-'+pluginId+' .bg-white,#plugin-config-form-'+pluginId+' .bg-gray-50{background:var(--card-bg,transparent)!important}'+
+     '#plugin-config-form-'+pluginId+' .text-gray-500,#plugin-config-form-'+pluginId+' .text-gray-600,#plugin-config-form-'+pluginId+' .text-gray-700,#plugin-config-form-'+pluginId+' .text-gray-900{color:inherit!important}'+
+     '#array-row-editor-modal .bg-white,#array-row-editor-modal .bg-gray-50{background:#111827!important;color:#f9fafb!important}'+
+     '#array-row-editor-modal label,#array-row-editor-modal h3,#array-row-editor-modal h4{color:#f9fafb!important}'+
+     '#array-row-editor-modal input,#array-row-editor-modal select,#array-row-editor-modal textarea{background:#1f2937!important;color:#f9fafb!important;border-color:#4b5563!important}'+
      '</style>'+
      '<div id="'+id+'_box" data-ha-ignore-gate="true">'+
      '<div style="font-weight:600;margin-bottom:.75rem">Step 1: Connect Home Assistant</div>'+
@@ -46,6 +53,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      '</label>'+
      '<div id="'+id+'_status" style="font-size:.85rem;color:#6b7280;margin-bottom:.5rem">Enter the URL and token above, then validate the connection.</div>'+
      '<div id="'+id+'_diag" style="font-size:.75rem;color:#6b7280;margin-bottom:.75rem;white-space:pre-wrap"></div>'+
+     '<div id="'+id+'_save_error" style="display:none;font-size:.78rem;color:#ef4444;margin:.5rem 0 .75rem;white-space:pre-wrap"></div>'+
      '<button type="button" id="'+id+'_validate" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Validate Connection</button>'+
      '<input type="hidden" name="'+(options.fullKey||'connection_setup')+'" value=""></div>';
    var urlInput=container.querySelector('#'+id+'_url');
@@ -55,6 +63,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    var btn=container.querySelector('#'+id+'_validate');
    var status=container.querySelector('#'+id+'_status');
    var diag=container.querySelector('#'+id+'_diag');
+   var saveError=container.querySelector('#'+id+'_save_error');
    var lastValidated='';
    async function loadSavedConnection(){
      try{
@@ -87,6 +96,27 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      tokenInput.type=showing?'password':'text';
      toggleBtn.textContent=showing?'Show':'Hide';
    });
+   if(root){
+     root.addEventListener('htmx:beforeRequest',function(){
+       saveError.style.display='none';
+       saveError.textContent='';
+     });
+     root.addEventListener('htmx:responseError',function(e){
+       try{
+         var xhr=e.detail&&e.detail.xhr;
+         var body=xhr&&xhr.responseText?JSON.parse(xhr.responseText):null;
+         var details=(body&&body.error&&body.error.details)||
+                     (body&&body.details)||
+                     (body&&body.error&&body.error.context&&body.error.context.validation_errors&&body.error.context.validation_errors.join('\n'))||
+                     (body&&body.context&&body.context.validation_errors&&body.context.validation_errors.join('\n'))||
+                     (xhr&&xhr.responseText)||'Configuration save failed.';
+         saveError.textContent='Save validation details:\n'+details;
+       }catch(err){
+         saveError.textContent='Save validation details:\n'+((e.detail&&e.detail.xhr&&e.detail.xhr.responseText)||'Configuration save failed.');
+       }
+       saveError.style.display='block';
+     });
+   }
    btn.addEventListener('click',async function(){
      var url=urlInput.value||'',token=tokenInput.value||'',verify=sslInput.checked;
      if(!url){status.textContent='Enter your Home Assistant URL first.';status.style.color='#b91c1c';return;}
