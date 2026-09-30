@@ -55,13 +55,18 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
          params:{mode:'validate',ha_url:url,ha_token:token,verify_ssl:verify!==false}
        })});
        var data=await resp.json();
-       var raw=String((data&&data.output)||'').trim(),payload=null,lines=raw.split(/\r?\n/).filter(Boolean);
-       for(var i=lines.length-1;i>=0;i--){try{payload=JSON.parse(lines[i]);if(payload&&typeof payload==='object')break;}catch(e){}}
+       var payload=null;
+       if(data && typeof data==='object' && Object.prototype.hasOwnProperty.call(data,'ok')){
+         payload=data;
+       }else{
+         var raw=String((data&&data.output)||'').trim(),lines=raw.split(/\r?\n/).filter(Boolean);
+         for(var i=lines.length-1;i>=0;i--){try{payload=JSON.parse(lines[i]);if(payload&&typeof payload==='object')break;}catch(e){}}
+       }
        if(!payload){
          var msg=(data&&data.message)||'Home Assistant validation failed.';
          throw new Error(msg);
        }
-       if(!payload.ok)throw new Error(payload.error||'Home Assistant validation failed.');
+       if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant validation failed.');
        lastValidated=fingerprint();
        setGate(true);
        status.textContent='Connected to Home Assistant successfully. '+(payload.message||'Entity discovery and plugin options are now unlocked.');
