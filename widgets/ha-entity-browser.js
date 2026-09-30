@@ -8,6 +8,49 @@ function readField(name){
   if(!el)return '';
   return el.type==='checkbox'?el.checked:(el.value||'');
 }
+function smartLocation(entity){
+  var text=((entity.friendly_name||'')+' '+(entity.entity_id||'')).toLowerCase();
+  var words=['person','people','vehicle','car','package','parcel','animal','pet','motion','occupancy','presence','detected','detection','camera','sensor','binary','doorbell'];
+  var name=(entity.friendly_name||entity.entity_id||'Home').replace(/[_-]+/g,' ');
+  words.forEach(function(w){name=name.replace(new RegExp('\\b'+w+'\\b','ig'),' ');});
+  name=name.replace(/\s+/g,' ').trim();
+  if(!name || name.length>28){
+    if(text.indexOf('driveway')>=0)return 'Driveway';
+    if(text.indexOf('front door')>=0||text.indexOf('front_door')>=0)return 'Front Door';
+    if(text.indexOf('back door')>=0||text.indexOf('back_door')>=0)return 'Back Door';
+    if(text.indexOf('garage')>=0)return 'Garage';
+    return entity.friendly_name||'Home';
+  }
+  return name;
+}
+function detectionKind(entity){
+  var text=((entity.friendly_name||'')+' '+(entity.entity_id||'')+' '+(entity.device_class||'')).toLowerCase();
+  if(/package|parcel/.test(text))return 'Package';
+  if(/vehicle|car|auto/.test(text))return 'Vehicle';
+  if(/person|people|occupancy|presence/.test(text))return 'Person';
+  if(/animal|pet|dog|cat/.test(text))return 'Animal';
+  if(/motion/.test(text))return 'Motion';
+  return '';
+}
+function entityDefaults(entity){
+  var d={label:entity.friendly_name||entity.entity_id,unit:entity.unit||'',value_template:'{value}{unit}',subtitle_template:''};
+  var dc=String(entity.device_class||'').toLowerCase(), domain=String(entity.domain||'');
+  if(domain==='sensor' && (dc==='temperature'||/temperature/.test(entity.entity_id||''))) d.unit=entity.unit||'°F';
+  if(domain==='sensor' && dc==='battery') d.unit=entity.unit||'%';
+  if(domain==='sensor' && (dc==='humidity'||/humidity/.test(entity.entity_id||''))) d.unit=entity.unit||'%';
+  if(domain==='person'||domain==='device_tracker') d.subtitle_template='Presence';
+  if(domain==='cover' && /garage/.test((entity.friendly_name||'')+' '+(entity.entity_id||''))) d.label='Garage Door';
+  return d;
+}
+function notificationDefaults(entity){
+  var location=smartLocation(entity), kind=detectionKind(entity), title=location.toUpperCase();
+  var msg='{friendly_name}: {state}';
+  if(kind && kind!=='Motion') msg=kind+' detected'+(location?' in '+location.toLowerCase():'');
+  else if(kind==='Motion') msg='Motion detected'+(location?' in '+location.toLowerCase():'');
+  else if(entity.domain==='cover') msg='{friendly_name} is {state}';
+  else if(entity.domain==='lock') msg='{friendly_name} is {state}';
+  return {title:title||'HOME ALERT',message:msg,to:entity.domain==='binary_sensor'?'on':'',priority:true};
+}
 function addToArray(pluginId,fieldKey,entity,kind){
   var fieldId=(pluginId+'-'+fieldKey).replace(/\./g,'-').replace(/_/g,'-');
   var addButton=document.querySelector('button[data-field-id="'+fieldId+'"]');
@@ -29,15 +72,16 @@ function addToArray(pluginId,fieldKey,entity,kind){
     } else input.value=value==null?'':value;
   }
   set('entity_id',entity.entity_id);
-  if(kind==='entity')set('label',entity.friendly_name||entity.entity_id);
+  if(kind==='entity'){
+    var ed=entityDefaults(entity);
+    set('label',ed.label);set('unit',ed.unit);set('value_template',ed.value_template);set('subtitle_template',ed.subtitle_template);
+  }
   if(kind==='calendar')set('label',entity.friendly_name||'UPCOMING');
   if(kind==='notification'){
-    set('title',(entity.friendly_name||'HOME ALERT').toUpperCase());
-    set('message','{friendly_name}: {state}');
-    if(entity.domain==='binary_sensor')set('to','on');
-    set('priority',true);
+    var nd=notificationDefaults(entity);
+    set('title',nd.title);set('message',nd.message);set('to',nd.to);set('priority',nd.priority);
   }
-  window.showNotification(entity.entity_id+' added to '+fieldKey.replace(/_/g,' '),'success');
+  window.showNotification(entity.entity_id+' added with smart defaults','success');
 }
 window.LEDMatrixWidgets.register('ha-entity-browser',{
   name:'Home Assistant Entity Browser',version:'1.0.0',
