@@ -246,7 +246,19 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
           row.append(meta,actions);results.appendChild(row);
         });
         results.style.display='block';
-      }catch(err){status.textContent='Search failed.';window.showNotification('Home Assistant search failed: '+err.message,'error');}
+      }catch(err){
+        status.textContent='Search failed.';
+        var message=String(err&&err.message||err||'');
+        if(/401|403|unauthorized|forbidden|rejected the token/i.test(message)){
+          var validated=root&&root.querySelector('[name="connection_validated"]');
+          if(validated)validated.value='false';
+          window.__HA_CONNECTION_VALIDATED__=false;
+          document.dispatchEvent(new CustomEvent('ha-connection-validation',{detail:{validated:false}}));
+          window.showNotification('Home Assistant authorization failed. Validate the connection again.','error');
+        }else{
+          window.showNotification('Home Assistant search failed: '+message,'error');
+        }
+      }
       finally{button.disabled=false;button.textContent='Search Home Assistant';}
     }
     button.addEventListener('click',runSearch);
