@@ -26,14 +26,20 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    var id=sid(options.fieldId||container.id);
    var pluginId=options.pluginId||'home-assistant';
    var root=container.closest('form')||document.getElementById('plugin-config-form-'+pluginId)||container.parentElement;
-   container.innerHTML='<div data-ha-ignore-gate="true" style="border:1px solid #d1d5db;border-radius:.5rem;padding:1rem;background:#f9fafb">'+
+   container.innerHTML='<style>'+
+     '#'+id+'_box{border:1px solid var(--border-color,#4b5563);border-radius:.5rem;padding:1rem;background:var(--card-bg,transparent);color:inherit}'+
+     '#'+id+'_box input,#'+id+'_box select,#'+id+'_box button{color:inherit}'+
+     '#'+id+'_box input[type="url"],#'+id+'_box input[type="password"],#'+id+'_box input[type="text"]{background:var(--input-bg,#111827);color:var(--text-color,#f9fafb);border-color:var(--border-color,#4b5563)}'+
+     '#'+id+'_toggle{background:transparent!important;color:inherit!important}'+
+     '</style>'+
+     '<div id="'+id+'_box" data-ha-ignore-gate="true">'+
      '<div style="font-weight:600;margin-bottom:.75rem">Step 1: Connect Home Assistant</div>'+
      '<label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.25rem">Home Assistant URL</label>'+
-     '<input type="url" name="ha_url" id="'+id+'_url" placeholder="https://homeassistant.example.com" autocomplete="url" class="form-input w-full rounded-md border-gray-300 shadow-sm bg-white text-black" style="margin-bottom:.65rem">'+
+     '<input type="url" name="ha_url" id="'+id+'_url" placeholder="https://homeassistant.example.com" autocomplete="url" class="form-input w-full rounded-md shadow-sm" style="margin-bottom:.65rem">'+
      '<label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.25rem">Long-Lived Access Token</label>'+
      '<div style="display:flex;gap:.4rem;margin-bottom:.65rem">'+
-       '<input type="password" name="ha_token" id="'+id+'_token" autocomplete="new-password" spellcheck="false" class="form-input w-full rounded-md border-gray-300 shadow-sm bg-white text-black">'+
-       '<button type="button" id="'+id+'_toggle" class="px-3 py-2 text-sm border border-gray-300 rounded-md bg-white">Show</button>'+
+       '<input type="password" name="ha_token" id="'+id+'_token" autocomplete="new-password" spellcheck="false" class="form-input w-full rounded-md shadow-sm">'+
+       '<button type="button" id="'+id+'_toggle" class="px-3 py-2 text-sm border rounded-md">Show</button>'+
      '</div>'+
      '<label style="display:flex;align-items:center;gap:.45rem;font-size:.8rem;margin-bottom:.75rem">'+
        '<input type="checkbox" name="verify_ssl" id="'+id+'_ssl" value="true" checked> Verify SSL certificate'+
@@ -50,6 +56,20 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    var status=container.querySelector('#'+id+'_status');
    var diag=container.querySelector('#'+id+'_diag');
    var lastValidated='';
+   async function loadSavedConnection(){
+     try{
+       var resp=await fetch('/api/v3/plugins/config?plugin_id='+encodeURIComponent(pluginId),{cache:'no-store'});
+       var data=await resp.json();
+       var cfg=(data&&data.data&&data.data.config)?data.data.config:
+               (data&&data.data)?data.data:
+               (data&&data.config)?data.config:null;
+       if(!cfg||typeof cfg!=='object')return;
+       if(cfg.ha_url&&!urlInput.value)urlInput.value=cfg.ha_url;
+       if(cfg.ha_token&&!tokenInput.value)tokenInput.value=cfg.ha_token;
+       if(Object.prototype.hasOwnProperty.call(cfg,'verify_ssl'))sslInput.checked=!!cfg.verify_ssl;
+     }catch(e){}
+   }
+   loadSavedConnection();
    setGate(root,false);
    function invalidate(){
      if(lastValidated && fingerprintLocal(urlInput,tokenInput,sslInput)!==lastValidated){
