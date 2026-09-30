@@ -19,7 +19,7 @@ function setGate(root,open){
     group.style.pointerEvents=open?'':'none';
   });
 }
-function fingerprint(root){return String(value(root,'ha_url'))+'|'+String(value(root,'ha_token'))+'|'+String(value(root,'verify_ssl'));}
+function fingerprintLocal(urlInput,tokenInput,sslInput){return String(urlInput.value||'')+'|'+String(tokenInput.value||'')+'|'+String(sslInput.checked);}
 window.LEDMatrixWidgets.register('ha-connection-setup',{
  name:'Home Assistant Connection Setup',version:'1.0.0',
  render:function(container,config,current,options){
@@ -27,29 +27,48 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    var pluginId=options.pluginId||'home-assistant';
    var root=container.closest('form')||document.getElementById('plugin-config-form-'+pluginId)||container.parentElement;
    container.innerHTML='<div data-ha-ignore-gate="true" style="border:1px solid #d1d5db;border-radius:.5rem;padding:1rem;background:#f9fafb">'+
-     '<div style="font-weight:600;margin-bottom:.35rem">Step 1: Validate Home Assistant</div>'+
-     '<div id="'+id+'_status" style="font-size:.85rem;color:#6b7280;margin-bottom:.5rem">Enter the Home Assistant URL and Long-Lived Access Token above, then validate the connection.</div>'+
+     '<div style="font-weight:600;margin-bottom:.75rem">Step 1: Connect Home Assistant</div>'+
+     '<label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.25rem">Home Assistant URL</label>'+
+     '<input type="url" name="ha_url" id="'+id+'_url" placeholder="https://homeassistant.example.com" autocomplete="url" class="form-input w-full rounded-md border-gray-300 shadow-sm bg-white text-black" style="margin-bottom:.65rem">'+
+     '<label style="display:block;font-size:.8rem;font-weight:600;margin-bottom:.25rem">Long-Lived Access Token</label>'+
+     '<div style="display:flex;gap:.4rem;margin-bottom:.65rem">'+
+       '<input type="password" name="ha_token" id="'+id+'_token" autocomplete="new-password" spellcheck="false" class="form-input w-full rounded-md border-gray-300 shadow-sm bg-white text-black">'+
+       '<button type="button" id="'+id+'_toggle" class="px-3 py-2 text-sm border border-gray-300 rounded-md bg-white">Show</button>'+
+     '</div>'+
+     '<label style="display:flex;align-items:center;gap:.45rem;font-size:.8rem;margin-bottom:.75rem">'+
+       '<input type="checkbox" name="verify_ssl" id="'+id+'_ssl" value="true" checked> Verify SSL certificate'+
+     '</label>'+
+     '<div id="'+id+'_status" style="font-size:.85rem;color:#6b7280;margin-bottom:.5rem">Enter the URL and token above, then validate the connection.</div>'+
      '<div id="'+id+'_diag" style="font-size:.75rem;color:#6b7280;margin-bottom:.75rem;white-space:pre-wrap"></div>'+
      '<button type="button" id="'+id+'_validate" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Validate Connection</button>'+
      '<input type="hidden" name="'+(options.fullKey||'connection_setup')+'" value=""></div>';
+   var urlInput=container.querySelector('#'+id+'_url');
+   var tokenInput=container.querySelector('#'+id+'_token');
+   var sslInput=container.querySelector('#'+id+'_ssl');
+   var toggleBtn=container.querySelector('#'+id+'_toggle');
    var btn=container.querySelector('#'+id+'_validate');
    var status=container.querySelector('#'+id+'_status');
    var diag=container.querySelector('#'+id+'_diag');
    var lastValidated='';
    setGate(root,false);
    function invalidate(){
-     if(lastValidated && fingerprint(root)!==lastValidated){
+     if(lastValidated && fingerprintLocal(urlInput,tokenInput,sslInput)!==lastValidated){
        lastValidated='';
        setGate(root,false);
        status.textContent='Connection settings changed. Validate again to unlock Home Assistant options.';
        status.style.color='#b45309';
      }
    }
-   ['ha_url','ha_token','verify_ssl'].forEach(function(n){
-     var e=field(root,n);if(e){e.addEventListener('input',invalidate);e.addEventListener('change',invalidate);}
+   [urlInput,tokenInput,sslInput].forEach(function(e){
+     if(e){e.addEventListener('input',invalidate);e.addEventListener('change',invalidate);}
+   });
+   toggleBtn.addEventListener('click',function(){
+     var showing=tokenInput.type==='text';
+     tokenInput.type=showing?'password':'text';
+     toggleBtn.textContent=showing?'Show':'Hide';
    });
    btn.addEventListener('click',async function(){
-     var url=value(root,'ha_url'),token=value(root,'ha_token'),verify=value(root,'verify_ssl');
+     var url=urlInput.value||'',token=tokenInput.value||'',verify=sslInput.checked;
      if(!url){status.textContent='Enter your Home Assistant URL first.';status.style.color='#b91c1c';return;}
      if(!token){status.textContent='Enter a Home Assistant Long-Lived Access Token first.';status.style.color='#b91c1c';return;}
      btn.disabled=true;btn.textContent='Validating...';status.textContent='Connecting to Home Assistant...';status.style.color='#6b7280';diag.textContent='Target: '+String(url).replace(/\/$/,'')+'/api/';
@@ -78,7 +97,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
          (payload.message?'\nResponse: '+payload.message:'')+
          (payload.error?'\nError: '+payload.error:'');
        if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant validation failed.');
-       lastValidated=fingerprint(root);
+       lastValidated=fingerprintLocal(urlInput,tokenInput,sslInput);
        setGate(root,true);
        status.textContent='Connected to Home Assistant successfully. '+(payload.message||'Entity discovery and plugin options are now unlocked.');
        status.style.color='#15803d';
