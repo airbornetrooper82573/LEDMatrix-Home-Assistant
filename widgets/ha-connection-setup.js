@@ -101,20 +101,26 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
        saveError.style.display='none';
        saveError.textContent='';
      });
-     root.addEventListener('htmx:responseError',function(e){
+     root.addEventListener('htmx:afterRequest',function(e){
+       var xhr=e.detail&&e.detail.xhr;
+       if(!xhr || xhr.status < 400)return;
        try{
-         var xhr=e.detail&&e.detail.xhr;
-         var body=xhr&&xhr.responseText?JSON.parse(xhr.responseText):null;
-         var details=(body&&body.error&&body.error.details)||
-                     (body&&body.details)||
-                     (body&&body.error&&body.error.context&&body.error.context.validation_errors&&body.error.context.validation_errors.join('\n'))||
-                     (body&&body.context&&body.context.validation_errors&&body.context.validation_errors.join('\n'))||
-                     (xhr&&xhr.responseText)||'Configuration save failed.';
+         var body=xhr.responseText?JSON.parse(xhr.responseText):null;
+         var err=(body&&body.error)||body||{};
+         var validation=(err.context&&err.context.validation_errors)||
+                        (body&&body.context&&body.context.validation_errors)||
+                        err.validation_errors||
+                        body.validation_errors;
+         var details=err.details||body.details||
+                     (Array.isArray(validation)?validation.join('\n'):'')||
+                     err.message||body.message||xhr.responseText||
+                     'Configuration save failed.';
          saveError.textContent='Save validation details:\n'+details;
        }catch(err){
-         saveError.textContent='Save validation details:\n'+((e.detail&&e.detail.xhr&&e.detail.xhr.responseText)||'Configuration save failed.');
+         saveError.textContent='Save validation details:\n'+(xhr.responseText||'Configuration save failed.');
        }
        saveError.style.display='block';
+       saveError.scrollIntoView({behavior:'smooth',block:'nearest'});
      });
    }
    btn.addEventListener('click',async function(){
