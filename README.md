@@ -112,6 +112,21 @@ Use the domain selector to narrow a large Home Assistant installation to sensors
 
 The token is sent only to the local LEDMatrix backend action that performs the Home Assistant request; the browser does not call Home Assistant directly, which avoids CORS problems.
 
+## Smart Entity Presets
+
+When you add an item from the Entity Browser, the plugin now inspects the Home Assistant domain, device class, unit, friendly name, and entity ID to pre-fill sensible defaults.
+
+Examples:
+
+- Temperature, humidity, and battery sensors carry their Home Assistant unit into the display automatically.
+- Garage-related covers are labeled **Garage Door** and common Home Assistant cover states are shown as **Open**, **Closed**, **Opening**, and **Closing**.
+- Locks display **Locked**, **Unlocked**, **Locking**, **Unlocking**, or **Jammed** instead of raw machine-state text.
+- Binary sensor device classes are translated into useful wording: door/window sensors become **Open/Closed**, motion becomes **Motion/Clear**, occupancy becomes **Detected/Clear**, moisture becomes **Wet/Dry**, presence becomes **Present/Away**, and similar device classes receive appropriate labels.
+- Person and device tracker entities show **Home/Away** where appropriate.
+- Alert rules created from camera/AI-related binary sensors look at the entity name/device class and suggest messages such as **Person detected in driveway**, **Vehicle detected in driveway**, **Package detected at front door**, **Animal detected**, or **Motion detected**.
+
+These are only starting defaults. Every generated label, unit, message, priority setting, color, scroll speed, and state trigger remains editable in the LEDMatrix configuration UI.
+
 ## Visual Colors
 
 The plugin now uses LEDMatrix's visual color controls instead of requiring typed hex values. Global entity/calendar/notification colors have clickable color pickers. Individual rows also expose visual color overrides in their advanced settings.
