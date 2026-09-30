@@ -104,9 +104,23 @@ https://github.com/airbornetrooper82573/LEDMatrix-Home-Assistant
 }
 \`\`\`
 
+## Setup Flow
+
+The plugin now uses a gated setup flow:
+
+1. Enter the **Home Assistant URL**.
+2. Enter a **Long-Lived Access Token**.
+3. Click **Validate Connection**.
+4. LEDMatrix calls the Home Assistant `/api/` endpoint and verifies that the URL is reachable and the token authenticates successfully.
+5. Only after validation succeeds are entity discovery, display settings, calendars, and notification rules unlocked.
+
+If the URL, token, or SSL verification setting changes, the page locks those options again until the connection is revalidated.
+
+Validation failures are shown directly in the setup card, including invalid URL, missing token, authentication failure, SSL/certificate errors, and connection failures.
+
 ## Entity Browser
 
-Enter your Home Assistant URL and Long-Lived Access Token at the top of the plugin configuration page. The **Home Assistant Entity Browser** can then query `/api/states` and search by friendly name, entity ID, current state, domain, device class, or unit.
+After the Step 1 connection validation succeeds, the **Home Assistant Entity Browser** can query `/api/states` and search by friendly name, entity ID, current state, domain, device class, or unit.
 
 Use the domain selector to narrow a large Home Assistant installation to sensors, binary sensors, calendars, cameras, covers, locks, people, weather, switches, climate entities, and more. Each search result can be added directly as an **Entity**, **Calendar**, or **Alert Rule** without copying an entity ID by hand.
 
