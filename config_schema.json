@@ -1,0 +1,121 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Home Assistant Configuration",
+  "properties": {
+    "enabled": {"type":"boolean","default":true},
+    "display_duration": {"type":"number","default":20,"minimum":1,"maximum":300},
+    "ha_url": {"type":"string","description":"Home Assistant URL, e.g. http://192.168.1.50:8123"},
+    "ha_token": {"type":"string","description":"Home Assistant Long-Lived Access Token."},
+    "verify_ssl": {"type":"boolean","default":true},
+    "request_timeout": {"type":"number","default":8,"minimum":1,"maximum":60},
+    "show_entities": {"type":"boolean","default":true},
+    "show_calendars": {"type":"boolean","default":true},
+    "enable_realtime_events": {"type":"boolean","default":true},
+    "notification_priority": {"type":"boolean","default":true,"description":"Use native LEDMatrix live-priority so priority notifications interrupt normal rotation immediately."},
+    "live_priority": {"type":"boolean","default":true,"description":"Legacy alias for notification_priority."},
+    "notification_duration": {"type":"number","default":10,"minimum":1,"maximum":300},
+    "notification_queue_size": {"type":"integer","default":20,"minimum":1,"maximum":100},
+    "notification_cooldown": {"type":"number","default":15,"minimum":0,"maximum":3600},
+    "max_calendar_events": {"type":"integer","default":10,"minimum":1,"maximum":100},
+    "layout": {"type":"string","enum":["auto","text"],"default":"auto"},
+    "show_heading": {"type":"boolean","default":true},
+    "title_font_size": {"type":"integer","default":11,"minimum":6,"maximum":18},
+    "subtitle_font_size": {"type":"integer","default":7,"minimum":5,"maximum":14},
+    "heading_font_size": {"type":"integer","default":6,"minimum":5,"maximum":12},
+    "row_gap": {"type":"integer","default":1,"minimum":0,"maximum":5},
+    "enable_scroll": {"type":"boolean","default":true,"description":"Enable pixel-width-aware marquee scrolling globally."},
+    "scroll_speed": {"type":"number","default":14,"minimum":1,"maximum":120,"description":"Default marquee speed in pixels per second."},
+    "scroll_pause": {"type":"number","default":1.25,"minimum":0,"maximum":10},
+    "scroll_gap": {"type":"integer","default":28,"minimum":8,"maximum":256},
+    "scroll_trigger_ratio": {"type":"number","default":0.85,"minimum":0.4,"maximum":1.0},
+    "entity_heading_color": {"$ref":"#/definitions/color","default":"#78DC82"},
+    "entity_title_color": {"$ref":"#/definitions/color","default":"#FFFFFF"},
+    "entity_subtitle_color": {"$ref":"#/definitions/color","default":"#B4B4B4"},
+    "calendar_heading_color": {"$ref":"#/definitions/color","default":"#5ABEFF"},
+    "calendar_title_color": {"$ref":"#/definitions/color","default":"#FFFFFF"},
+    "calendar_subtitle_color": {"$ref":"#/definitions/color","default":"#B4B4B4"},
+    "notification_heading_color": {"$ref":"#/definitions/color","default":"#FF5A46"},
+    "notification_title_color": {"$ref":"#/definitions/color","default":"#FFFFFF"},
+    "notification_subtitle_color": {"$ref":"#/definitions/color","default":"#DCDCDC"},
+    "entities": {
+      "type":"array","default":[],
+      "items":{
+        "type":"object",
+        "properties":{
+          "entity_id":{"type":"string","minLength":1},
+          "label":{"type":"string"},
+          "attribute":{"type":"string"},
+          "unit":{"type":"string"},
+          "title_template":{"type":"string","default":"{label}"},
+          "value_template":{"type":"string","default":"{value}{unit}"},
+          "subtitle_template":{"type":"string","default":""},
+          "state_map":{"type":"object","additionalProperties":{"type":["string","number","boolean"]}},
+          "heading_color":{"$ref":"#/definitions/color"},
+          "title_color":{"$ref":"#/definitions/color"},
+          "subtitle_color":{"$ref":"#/definitions/color"},
+          "enable_scroll":{"type":"boolean"},
+          "scroll_speed":{"type":"number","minimum":1,"maximum":120},
+          "scroll_pause":{"type":"number","minimum":0,"maximum":10},
+          "scroll_gap":{"type":"integer","minimum":8,"maximum":256}
+        },
+        "required":["entity_id"],
+        "additionalProperties":false
+      }
+    },
+    "calendars": {
+      "type":"array","default":[],
+      "items":{
+        "type":"object",
+        "properties":{
+          "entity_id":{"type":"string","minLength":1},
+          "label":{"type":"string","default":"UPCOMING"},
+          "days_ahead":{"type":"integer","default":7,"minimum":1,"maximum":365},
+          "max_events":{"type":"integer","default":5,"minimum":1,"maximum":50},
+          "heading_color":{"$ref":"#/definitions/color"},
+          "title_color":{"$ref":"#/definitions/color"},
+          "subtitle_color":{"$ref":"#/definitions/color"},
+          "enable_scroll":{"type":"boolean"},
+          "scroll_speed":{"type":"number","minimum":1,"maximum":120},
+          "scroll_pause":{"type":"number","minimum":0,"maximum":10},
+          "scroll_gap":{"type":"integer","minimum":8,"maximum":256}
+        },
+        "required":["entity_id"],
+        "additionalProperties":false
+      }
+    },
+    "event_notifications": {
+      "type":"array","default":[],
+      "description":"State-change rules. entity_id supports wildcards such as binary_sensor.driveway_*.",
+      "items":{
+        "type":"object",
+        "properties":{
+          "entity_id":{"type":"string","minLength":1},
+          "to":{"type":"array","items":{"type":["string","number","boolean"]},"default":[]},
+          "from":{"type":"array","items":{"type":["string","number","boolean"]},"default":[]},
+          "attribute_equals":{"type":"object","additionalProperties":true},
+          "title":{"type":"string","default":"HOME ALERT"},
+          "message":{"type":"string","default":"{friendly_name}: {state}"},
+          "subtitle":{"type":"string","default":""},
+          "priority":{"type":"boolean","description":"If true, interrupt normal LEDMatrix rotation immediately."},
+          "duration":{"type":"number","minimum":1,"maximum":300},
+          "cooldown":{"type":"number","minimum":0,"maximum":3600},
+          "heading_color":{"$ref":"#/definitions/color"},
+          "title_color":{"$ref":"#/definitions/color"},
+          "subtitle_color":{"$ref":"#/definitions/color"},
+          "enable_scroll":{"type":"boolean"},
+          "scroll_speed":{"type":"number","minimum":1,"maximum":120},
+          "scroll_pause":{"type":"number","minimum":0,"maximum":10},
+          "scroll_gap":{"type":"integer","minimum":8,"maximum":256}
+        },
+        "required":["entity_id","message"],
+        "additionalProperties":false
+      }
+    }
+  },
+  "definitions": {
+    "color": {"type":"string","format":"color","pattern":"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$"}
+  },
+  "required":["enabled","ha_url","ha_token"],
+  "additionalProperties":false
+}
