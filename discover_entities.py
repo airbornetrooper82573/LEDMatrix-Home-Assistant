@@ -81,6 +81,7 @@ def main():
                 http_status=status_code,
                 redirect_location=response.headers.get("Location", ""),
                 transport="requests-direct",
+                verify_ssl=verify_ssl,
             )
         if status_code == 401:
             return fail(
@@ -153,6 +154,7 @@ def main():
             "http_status": status_code,
             "token_length": len(token),
             "token_whitespace_removed": token_whitespace_removed,
+            "verify_ssl": verify_ssl,
             "transport": "requests-direct",
         })
 
@@ -201,6 +203,7 @@ def main():
         "entities": results[:250],
         "endpoint": request_url,
         "http_status": status_code,
+        "verify_ssl": verify_ssl,
         "transport": "requests-direct",
     })
 
