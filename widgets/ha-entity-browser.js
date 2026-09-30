@@ -82,6 +82,7 @@ function addToArray(root,pluginId,fieldKey,entity,kind){
     set('title',nd.title);set('message',nd.message);set('to',nd.to);set('priority',nd.priority);
   }
   window.showNotification(entity.entity_id+' added with smart defaults','success');
+  document.dispatchEvent(new CustomEvent('ha-config-preview-change',{detail:{pluginId:pluginId}}));
 }
 window.LEDMatrixWidgets.register('ha-entity-browser',{
   name:'Home Assistant Entity Browser',version:'1.0.0',
@@ -102,6 +103,12 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
       '#'+fieldId+'_browser .ha-btn{border:1px solid var(--border-color,#4b5563);border-radius:.375rem;padding:.3rem .5rem;font-size:.75rem;background:transparent;color:inherit;cursor:pointer}'+
       '#'+fieldId+'_browser .ha-btn:hover{background:rgba(127,127,127,.15)}'+
       '#'+fieldId+'_browser .ha-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:.5rem}'+
+      '#'+fieldId+'_preview_wrap{margin-top:1rem;padding:1rem;border:1px solid var(--border-color,#4b5563);border-radius:.5rem}'+
+      '#'+fieldId+'_preview_list{display:grid;gap:.55rem;margin-top:.65rem}'+
+      '#'+fieldId+'_preview_list .ha-preview-screen{aspect-ratio:10/1;min-height:52px;max-width:640px;background:#000;border:1px solid #374151;border-radius:.35rem;padding:.35rem .55rem;overflow:hidden;font-family:monospace;display:flex;flex-direction:column;justify-content:center}'+
+      '#'+fieldId+'_preview_list .ha-preview-kind{font-size:.62rem;line-height:1;color:#9ca3af;text-transform:uppercase;letter-spacing:.08em}'+
+      '#'+fieldId+'_preview_list .ha-preview-title{font-size:.88rem;line-height:1.2;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      '#'+fieldId+'_preview_list .ha-preview-sub{font-size:.68rem;line-height:1.1;color:#b4b4b4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
       '@media(max-width:700px){#'+fieldId+'_browser .ha-grid{grid-template-columns:1fr}}'+
       '</style>'+
       '<div id="'+fieldId+'_browser">'+
@@ -116,12 +123,80 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
       '<button type="button" id="'+fieldId+'_search" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Search Home Assistant</button>'+
       '</div><div id="'+fieldId+'_status" class="text-xs text-gray-500 mt-2">Enter your Home Assistant URL and token above, then search your entities.</div>'+
       '<div id="'+fieldId+'_results" class="mt-3 border rounded-lg overflow-hidden" style="display:none;background:var(--card-bg,transparent);border-color:var(--border-color,#4b5563)"></div>'+
+      '<div id="'+fieldId+'_preview_wrap">'+
+        '<div style="font-weight:600">Unsaved Display Preview</div>'+
+        '<div style="font-size:.75rem;color:var(--muted-text,#9ca3af);margin-top:.2rem">Approximate 320×32 matrix layout using the values currently in this form.</div>'+
+        '<div id="'+fieldId+'_preview_list"></div>'+
+      '</div>'+
       '<input type="hidden" name="'+esc(options.fullKey||'entity_browser')+'" value=""></div>';
     var query=container.querySelector('#'+fieldId+'_query');
     var domain=container.querySelector('#'+fieldId+'_domain');
     var button=container.querySelector('#'+fieldId+'_search');
     var status=container.querySelector('#'+fieldId+'_status');
     var results=container.querySelector('#'+fieldId+'_results');
+    var previewList=container.querySelector('#'+fieldId+'_preview_list');
+
+    function collectRows(prefix){
+      var rows={};
+      if(!root)return [];
+      root.querySelectorAll('[name^="'+prefix+'."]').forEach(function(el){
+        var parts=String(el.name||'').split('.');
+        if(parts.length<3)return;
+        var idx=parts[1], key=parts.slice(2).join('.');
+        if(!/^\d+$/.test(idx))return;
+        rows[idx]=rows[idx]||{};
+        rows[idx][key]=el.type==='checkbox'?el.checked:(el.value||'');
+      });
+      return Object.keys(rows).sort(function(a,b){return Number(a)-Number(b);}).map(function(k){return rows[k];});
+    }
+    function previewScreen(kind,title,subtitle){
+      var screen=document.createElement('div');screen.className='ha-preview-screen';
+      var k=document.createElement('div');k.className='ha-preview-kind';k.textContent=kind;
+      var t=document.createElement('div');t.className='ha-preview-title';t.textContent=title||'';
+      var s=document.createElement('div');s.className='ha-preview-sub';s.textContent=subtitle||'';
+      screen.append(k,t,s);return screen;
+    }
+    function renderPreview(){
+      if(!previewList)return;
+      previewList.innerHTML='';
+      var entities=collectRows('entities');
+      var calendars=collectRows('calendars');
+      var notifications=collectRows('event_notifications');
+
+      entities.filter(function(x){return x.entity_id;}).forEach(function(x){
+        var heading=x.label||x.entity_id||'HOME ASSISTANT';
+        var value=(x.value_template||'{value}{unit}').replace('{value}','Sample').replace('{unit}',x.unit||'');
+        previewList.appendChild(previewScreen(heading,value,x.subtitle_template||''));
+      });
+      calendars.filter(function(x){return x.entity_id;}).forEach(function(x){
+        previewList.appendChild(previewScreen(x.label||'UPCOMING','Sample Family Event','Tomorrow 6:00 PM'));
+      });
+      notifications.filter(function(x){return x.entity_id||x.message;}).forEach(function(x){
+        var msg=(x.message||'{friendly_name}: {state}')
+          .replace('{friendly_name}','Front Door').replace('{state}','Detected')
+          .replace('{entity_id}',x.entity_id||'binary_sensor.example');
+        previewList.appendChild(previewScreen(x.title||'HOME ALERT',msg,x.subtitle||''));
+      });
+      if(!previewList.children.length){
+        var empty=document.createElement('div');
+        empty.style.cssText='font-size:.8rem;color:var(--muted-text,#9ca3af)';
+        empty.textContent='Add an entity, calendar, or alert rule to see a preview here.';
+        previewList.appendChild(empty);
+      }
+    }
+    var previewTimer=null;
+    if(root){
+      ['input','change'].forEach(function(evt){
+        root.addEventListener(evt,function(){
+          clearTimeout(previewTimer);
+          previewTimer=setTimeout(renderPreview,100);
+        });
+      });
+    }
+    document.addEventListener('ha-config-preview-change',function(e){
+      if(!e.detail||e.detail.pluginId===pluginId)renderPreview();
+    });
+    setTimeout(renderPreview,100);
     function syncValidationState(validated){
       var ok=!!validated;
       query.disabled=!ok;domain.disabled=!ok;button.disabled=!ok;
