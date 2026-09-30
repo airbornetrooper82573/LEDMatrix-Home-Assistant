@@ -1,7 +1,7 @@
 {
   "id": "home-assistant",
   "name": "Home Assistant",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Native Home Assistant display for LEDMatrix with validated setup flow, searchable entity discovery, smart presets, visual color controls, calendars, and real-time priority notifications.",
   "author": "airbornetrooper82573",
   "entry_point": "manager.py",
@@ -25,6 +25,12 @@
     ">=2.0.0"
   ],
   "versions": [
+    {
+      "version": "1.4.7",
+      "released": "2026-09-30",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Work around LEDMatrix script-action parameter serialization bug by sending verify_ssl as a string instead of a JSON boolean, then parsing it explicitly in the plugin backend. This prevents the temporary Python wrapper from failing before validation runs."
+    },
     {
       "version": "1.4.6",
       "released": "2026-09-30",
