@@ -11,7 +11,7 @@ from pathlib import Path
 
 def fail(message):
     print(json.dumps({"ok": False, "error": str(message), "entities": []}))
-    return 1
+    return 0
 
 
 def main():
@@ -34,6 +34,7 @@ def main():
     token = str(params.get("ha_token") or "")
     query = str(params.get("query") or "").strip().lower()
     domain = str(params.get("domain") or "").strip().lower()
+    mode = str(params.get("mode") or "discover").strip().lower()
     verify_ssl = bool(params.get("verify_ssl", True))
 
     if not ha_url.startswith(("http://", "https://")):
@@ -41,22 +42,31 @@ def main():
     if not token:
         return fail("Enter a Home Assistant Long-Lived Access Token first.")
 
+    endpoint = "/api/" if mode == "validate" else "/api/states"
     req = urllib.request.Request(
-        f"{ha_url}/api/states",
+        f"{ha_url}{endpoint}",
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
-            "User-Agent": "LEDMatrix-Home-Assistant-Entity-Discovery/1.2.0",
+            "User-Agent": "LEDMatrix-Home-Assistant-Entity-Discovery/1.4.0",
         },
     )
     context = None if verify_ssl else ssl._create_unverified_context()
 
     try:
         with urllib.request.urlopen(req, timeout=10, context=context) as response:
-            states = json.loads(response.read().decode("utf-8"))
+            payload = json.loads(response.read().decode("utf-8"))
     except Exception as exc:
         return fail(f"Home Assistant connection failed: {exc}")
 
+    if mode == "validate":
+        message = "Home Assistant API authenticated successfully."
+        if isinstance(payload, dict) and payload.get("message"):
+            message = str(payload.get("message"))
+        print(json.dumps({"ok": True, "message": message, "entities": []}))
+        return 0
+
+    states = payload
     if not isinstance(states, list):
         return fail("Home Assistant returned an unexpected response.")
 
