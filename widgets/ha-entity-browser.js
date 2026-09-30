@@ -120,13 +120,25 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
     var button=container.querySelector('#'+fieldId+'_search');
     var status=container.querySelector('#'+fieldId+'_status');
     var results=container.querySelector('#'+fieldId+'_results');
+    function syncValidationState(validated){
+      var ok=!!validated;
+      query.disabled=!ok;domain.disabled=!ok;button.disabled=!ok;
+      if(!ok){
+        status.textContent='Step 1 must be validated before entity discovery is available.';
+        results.style.display='none';
+      }else{
+        status.textContent='Connection validated. Search Home Assistant entities below.';
+      }
+    }
+    syncValidationState(window.__HA_CONNECTION_VALIDATED__===true);
+    document.addEventListener('ha-connection-validation',function(e){syncValidationState(e.detail&&e.detail.validated);});
     async function runSearch(){
       var haUrl=readField('ha_url'),haToken=readField('ha_token'),verifySsl=readField('verify_ssl');
       if(!haUrl||!haToken){window.showNotification('Enter the Home Assistant URL and token first.','error');return;}
       button.disabled=true;button.textContent='Searching...';status.textContent='Connecting to Home Assistant...';results.style.display='none';results.innerHTML='';
       try{
         var resp=await fetch('/api/v3/plugins/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          plugin_id:pluginId,action_id:'discover-entities',params:{ha_url:haUrl,ha_token:haToken,verify_ssl:verifySsl!==false,query:query.value||'',domain:domain.value||'all'}
+          plugin_id:pluginId,action_id:'discover-entities',params:{mode:'discover',ha_url:haUrl,ha_token:haToken,verify_ssl:verifySsl!==false,query:query.value||'',domain:domain.value||'all'}
         })});
         var data=await resp.json();
         if(!resp.ok||data.status!=='success')throw new Error(data.message||data.output||'Entity discovery failed');
