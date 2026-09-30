@@ -55,11 +55,13 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      '<div id="'+id+'_diag" style="font-size:.75rem;color:#6b7280;margin-bottom:.75rem;white-space:pre-wrap"></div>'+
      '<div id="'+id+'_save_error" style="display:none;font-size:.78rem;color:#ef4444;margin:.5rem 0 .75rem;white-space:pre-wrap"></div>'+
      '<button type="button" id="'+id+'_validate" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Validate Connection</button>'+
+     '<input type="hidden" name="connection_validated" id="'+id+'_validated" value="false">'+
      '<input type="hidden" name="'+(options.fullKey||'connection_setup')+'" value=""></div>';
    var urlInput=container.querySelector('#'+id+'_url');
    var tokenInput=container.querySelector('#'+id+'_token');
    var sslInput=container.querySelector('#'+id+'_ssl');
    var toggleBtn=container.querySelector('#'+id+'_toggle');
+   var validatedInput=container.querySelector('#'+id+'_validated');
    var btn=container.querySelector('#'+id+'_validate');
    var status=container.querySelector('#'+id+'_status');
    var diag=container.querySelector('#'+id+'_diag');
@@ -76,6 +78,13 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
        if(cfg.ha_url&&!urlInput.value)urlInput.value=cfg.ha_url;
        if(cfg.ha_token&&!tokenInput.value)tokenInput.value=cfg.ha_token;
        if(Object.prototype.hasOwnProperty.call(cfg,'verify_ssl'))sslInput.checked=!!cfg.verify_ssl;
+       if(cfg.connection_validated===true && urlInput.value && tokenInput.value){
+         if(validatedInput)validatedInput.value='true';
+         lastValidated=fingerprintLocal(urlInput,tokenInput,sslInput);
+         setGate(root,true);
+         status.textContent='Home Assistant connection previously validated. You can edit and save without validating again.';
+         status.style.color='#15803d';
+       }
      }catch(e){}
    }
    loadSavedConnection();
@@ -83,6 +92,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    function invalidate(){
      if(lastValidated && fingerprintLocal(urlInput,tokenInput,sslInput)!==lastValidated){
        lastValidated='';
+       if(validatedInput)validatedInput.value='false';
        setGate(root,false);
        status.textContent='Connection settings changed. Validate again to unlock Home Assistant options.';
        status.style.color='#b45309';
@@ -154,12 +164,13 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
          (payload.error?'\nError: '+payload.error:'');
        if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant validation failed.');
        lastValidated=fingerprintLocal(urlInput,tokenInput,sslInput);
+       if(validatedInput)validatedInput.value='true';
        setGate(root,true);
        status.textContent='Connected to Home Assistant successfully. '+(payload.message||'Entity discovery and plugin options are now unlocked.');
        status.style.color='#15803d';
        window.showNotification('Home Assistant connection validated','success');
      }catch(err){
-       lastValidated='';setGate(root,false);
+       lastValidated='';if(validatedInput)validatedInput.value='false';setGate(root,false);
        status.textContent=err.message||'Home Assistant validation failed.';
        status.style.color='#b91c1c';
        if(!diag.textContent)diag.textContent='Validation failed before a response was returned.';
