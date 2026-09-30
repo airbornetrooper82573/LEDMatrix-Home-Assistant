@@ -91,6 +91,7 @@ def main():
                 http_status=401,
                 token_length=len(token),
                 token_whitespace_removed=token_whitespace_removed,
+                verify_ssl=verify_ssl,
                 transport="requests-direct",
             )
         if status_code == 403:
