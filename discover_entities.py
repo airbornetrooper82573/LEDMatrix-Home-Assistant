@@ -39,8 +39,11 @@ def main():
         except Exception:
             pass
 
-    ha_url = str(params.get("ha_url") or "").rstrip("/")
-    token = str(params.get("ha_token") or "")
+    raw_ha_url = str(params.get("ha_url") or "")
+    raw_token = str(params.get("ha_token") or "")
+    ha_url = raw_ha_url.strip().rstrip("/")
+    token = raw_token.strip()
+    token_whitespace_removed = raw_token != token
     query = str(params.get("query") or "").strip().lower()
     domain = str(params.get("domain") or "").strip().lower()
     mode = str(params.get("mode") or "validate").strip().lower()
@@ -70,7 +73,7 @@ def main():
             payload = json.loads(response_text)
     except urllib.error.HTTPError as exc:
         if exc.code == 401:
-            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request, endpoint=request_url, http_status=401)
+            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request, endpoint=request_url, http_status=401, token_length=len(token), token_whitespace_removed=token_whitespace_removed)
         if exc.code == 403:
             return fail("Home Assistant denied access (403 Forbidden). Check the token permissions.", interactive_request, endpoint=request_url, http_status=403)
         return fail(f"Home Assistant returned HTTP {exc.code}: {exc.reason}", interactive_request, endpoint=request_url, http_status=exc.code)
@@ -94,6 +97,8 @@ def main():
             "entities": [],
             "endpoint": request_url,
             "http_status": status_code,
+            "token_length": len(token),
+            "token_whitespace_removed": token_whitespace_removed,
         })
 
     states = payload
