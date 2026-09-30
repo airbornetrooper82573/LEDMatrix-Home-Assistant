@@ -26,11 +26,13 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
    var id=sid(options.fieldId||container.id);
    container.innerHTML='<div data-ha-ignore-gate="true" style="border:1px solid #d1d5db;border-radius:.5rem;padding:1rem;background:#f9fafb">'+
      '<div style="font-weight:600;margin-bottom:.35rem">Step 1: Validate Home Assistant</div>'+
-     '<div id="'+id+'_status" style="font-size:.85rem;color:#6b7280;margin-bottom:.75rem">Enter the Home Assistant URL and Long-Lived Access Token above, then validate the connection.</div>'+
+     '<div id="'+id+'_status" style="font-size:.85rem;color:#6b7280;margin-bottom:.5rem">Enter the Home Assistant URL and Long-Lived Access Token above, then validate the connection.</div>'+
+     '<div id="'+id+'_diag" style="font-size:.75rem;color:#6b7280;margin-bottom:.75rem;white-space:pre-wrap"></div>'+
      '<button type="button" id="'+id+'_validate" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Validate Connection</button>'+
      '<input type="hidden" name="'+(options.fullKey||'connection_setup')+'" value=""></div>';
    var btn=container.querySelector('#'+id+'_validate');
    var status=container.querySelector('#'+id+'_status');
+   var diag=container.querySelector('#'+id+'_diag');
    var lastValidated='';
    setGate(false);
    function invalidate(){
@@ -48,7 +50,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
      var url=value('ha_url'),token=value('ha_token'),verify=value('verify_ssl');
      if(!url){status.textContent='Enter your Home Assistant URL first.';status.style.color='#b91c1c';return;}
      if(!token){status.textContent='Enter a Home Assistant Long-Lived Access Token first.';status.style.color='#b91c1c';return;}
-     btn.disabled=true;btn.textContent='Validating...';status.textContent='Connecting to Home Assistant...';status.style.color='#6b7280';
+     btn.disabled=true;btn.textContent='Validating...';status.textContent='Connecting to Home Assistant...';status.style.color='#6b7280';diag.textContent='Target: '+String(url).replace(/\/$/,'')+'/api/';
      try{
        var resp=await fetch('/api/v3/plugins/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
          plugin_id:options.pluginId||'home-assistant',action_id:'discover-entities',
@@ -66,6 +68,10 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
          var msg=(data&&data.message)||'Home Assistant validation failed.';
          throw new Error(msg);
        }
+       diag.textContent='Endpoint: '+(payload.endpoint||String(url).replace(/\/$/,'')+'/api/')+
+         (payload.http_status?'\nHTTP status: '+payload.http_status:'')+
+         (payload.message?'\nResponse: '+payload.message:'')+
+         (payload.error?'\nError: '+payload.error:'');
        if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant validation failed.');
        lastValidated=fingerprint();
        setGate(true);
@@ -76,6 +82,7 @@ window.LEDMatrixWidgets.register('ha-connection-setup',{
        lastValidated='';setGate(false);
        status.textContent=err.message||'Home Assistant validation failed.';
        status.style.color='#b91c1c';
+       if(!diag.textContent)diag.textContent='Validation failed before a response was returned.';
        window.showNotification(status.textContent,'error');
      }finally{btn.disabled=false;btn.textContent='Validate Connection';}
    });
