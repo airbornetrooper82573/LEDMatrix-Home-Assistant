@@ -742,9 +742,7 @@
     }
   },
   "required": [
-    "enabled",
-    "ha_url",
-    "ha_token"
+    "enabled"
   ],
   "additionalProperties": false
 }
