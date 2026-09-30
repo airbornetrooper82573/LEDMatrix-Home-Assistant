@@ -88,15 +88,15 @@ class HomeAssistantPlugin(BasePlugin):
             1.0, max(0.4, float(config.get("scroll_trigger_ratio", 0.85)))
         )
 
-        self.entity_heading_color = config.get("entity_heading_color", "#78DC82")
-        self.entity_title_color = config.get("entity_title_color", "#FFFFFF")
-        self.entity_subtitle_color = config.get("entity_subtitle_color", "#B4B4B4")
-        self.calendar_heading_color = config.get("calendar_heading_color", "#5ABEFF")
-        self.calendar_title_color = config.get("calendar_title_color", "#FFFFFF")
-        self.calendar_subtitle_color = config.get("calendar_subtitle_color", "#B4B4B4")
-        self.notification_heading_color = config.get("notification_heading_color", "#FF5A46")
-        self.notification_title_color = config.get("notification_title_color", "#FFFFFF")
-        self.notification_subtitle_color = config.get("notification_subtitle_color", "#DCDCDC")
+        self.entity_heading_color = config.get("entity_heading_color", [120, 220, 130])
+        self.entity_title_color = config.get("entity_title_color", [255, 255, 255])
+        self.entity_subtitle_color = config.get("entity_subtitle_color", [180, 180, 180])
+        self.calendar_heading_color = config.get("calendar_heading_color", [90, 190, 255])
+        self.calendar_title_color = config.get("calendar_title_color", [255, 255, 255])
+        self.calendar_subtitle_color = config.get("calendar_subtitle_color", [180, 180, 180])
+        self.notification_heading_color = config.get("notification_heading_color", [255, 90, 70])
+        self.notification_title_color = config.get("notification_title_color", [255, 255, 255])
+        self.notification_subtitle_color = config.get("notification_subtitle_color", [220, 220, 220])
 
         self.W = int(display_manager.width)
         self.H = int(display_manager.height)
@@ -157,7 +157,7 @@ class HomeAssistantPlugin(BasePlugin):
             headers={
                 "Authorization": f"Bearer {self.ha_token}",
                 "Content-Type": "application/json",
-                "User-Agent": "LEDMatrix-Home-Assistant/1.1.0",
+                "User-Agent": "LEDMatrix-Home-Assistant/1.2.0",
             },
         )
         try:
@@ -401,8 +401,17 @@ class HomeAssistantPlugin(BasePlugin):
             if not pattern or not fnmatch.fnmatchcase(entity_id, pattern):
                 continue
 
-            to_states = [str(v) for v in rule.get("to", [])]
-            from_states = [str(v) for v in rule.get("from", [])]
+            def _states(value):
+                if value is None:
+                    return []
+                if isinstance(value, str):
+                    return [part.strip() for part in value.split(",") if part.strip()]
+                if isinstance(value, (list, tuple, set)):
+                    return [str(v).strip() for v in value if str(v).strip()]
+                return [str(value).strip()]
+
+            to_states = _states(rule.get("to", []))
+            from_states = _states(rule.get("from", []))
             if to_states and new_state not in to_states:
                 continue
             if from_states and old_state not in from_states:
