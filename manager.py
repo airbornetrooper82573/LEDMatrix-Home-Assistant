@@ -192,6 +192,70 @@ class HomeAssistantPlugin(BasePlugin):
         except Exception:
             return str(template).strip()
 
+    @staticmethod
+    def _friendly_state_value(entity_id: str, state: Any, attrs: Dict[str, Any]) -> str:
+        """Turn common HA machine states into concise display-friendly text."""
+        raw = str(state if state is not None else "")
+        domain = entity_id.split(".", 1)[0] if "." in entity_id else ""
+        device_class = str((attrs or {}).get("device_class") or "").lower()
+        lowered = raw.lower()
+
+        if domain == "binary_sensor":
+            pairs = {
+                "door": ("Closed", "Open"),
+                "garage_door": ("Closed", "Open"),
+                "window": ("Closed", "Open"),
+                "opening": ("Closed", "Open"),
+                "lock": ("Locked", "Unlocked"),
+                "motion": ("Clear", "Motion"),
+                "occupancy": ("Clear", "Detected"),
+                "presence": ("Away", "Present"),
+                "moving": ("Stopped", "Moving"),
+                "moisture": ("Dry", "Wet"),
+                "smoke": ("Clear", "Smoke"),
+                "gas": ("Clear", "Detected"),
+                "carbon_monoxide": ("Clear", "Detected"),
+                "problem": ("OK", "Problem"),
+                "safety": ("Safe", "Unsafe"),
+                "tamper": ("Clear", "Tampered"),
+                "vibration": ("Clear", "Detected"),
+                "sound": ("Quiet", "Detected"),
+                "connectivity": ("Disconnected", "Connected"),
+                "plug": ("Unplugged", "Plugged In"),
+                "power": ("Off", "On"),
+                "running": ("Stopped", "Running"),
+                "battery": ("Normal", "Low"),
+                "battery_charging": ("Not Charging", "Charging"),
+            }
+            if lowered in ("off", "on") and device_class in pairs:
+                return pairs[device_class][1 if lowered == "on" else 0]
+            if lowered == "on":
+                return "On"
+            if lowered == "off":
+                return "Off"
+
+        if domain == "cover":
+            return {
+                "open": "Open", "closed": "Closed", "opening": "Opening",
+                "closing": "Closing", "unknown": "Unknown", "unavailable": "Unavailable"
+            }.get(lowered, raw.replace("_", " ").title())
+
+        if domain == "lock":
+            return {
+                "locked": "Locked", "unlocked": "Unlocked", "locking": "Locking",
+                "unlocking": "Unlocking", "jammed": "Jammed"
+            }.get(lowered, raw.replace("_", " ").title())
+
+        if domain in ("person", "device_tracker"):
+            return {"home": "Home", "not_home": "Away"}.get(
+                lowered, raw.replace("_", " ").title()
+            )
+
+        if domain in ("switch", "light", "input_boolean"):
+            return {"on": "On", "off": "Off"}.get(lowered, raw.replace("_", " ").title())
+
+        return raw.replace("_", " ").title() if raw.islower() and "_" in raw else raw
+
     def _style_kwargs(self, cfg: Dict[str, Any], kind: str) -> Dict[str, Any]:
         defaults = {
             "entity": (
@@ -232,7 +296,14 @@ class HomeAssistantPlugin(BasePlugin):
         if raw_value is None:
             raw_value = ""
 
-        value = str((cfg.get("state_map") or {}).get(str(raw_value), raw_value))
+        state_map = cfg.get("state_map") or {}
+        if attribute:
+            value = str(state_map.get(str(raw_value), raw_value))
+        else:
+            mapped = state_map.get(str(raw_value))
+            value = str(mapped if mapped is not None else self._friendly_state_value(
+                entity_id, raw_value, attrs
+            ))
         unit = str(cfg.get("unit", ctx.get("unit", "")) or "")
         ctx.update({"value": value, "unit": unit, "label": label})
 
