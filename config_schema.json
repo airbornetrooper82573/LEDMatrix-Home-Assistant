@@ -439,20 +439,32 @@
             "default": null
           },
           "scroll_speed": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 1,
             "maximum": 120,
-            "description": "Override marquee speed for this item in pixels per second."
+            "description": "Override marquee speed for this item in pixels per second.",
+            "default": null
           },
           "scroll_pause": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 0,
-            "maximum": 10
+            "maximum": 10,
+            "default": null
           },
           "scroll_gap": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 8,
-            "maximum": 256
+            "maximum": 256,
+            "default": null
           }
         },
         "required": [
@@ -560,20 +572,32 @@
             "default": null
           },
           "scroll_speed": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 1,
             "maximum": 120,
-            "description": "Override marquee speed for this item in pixels per second."
+            "description": "Override marquee speed for this item in pixels per second.",
+            "default": null
           },
           "scroll_pause": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 0,
-            "maximum": 10
+            "maximum": 10,
+            "default": null
           },
           "scroll_gap": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 8,
-            "maximum": 256
+            "maximum": 256,
+            "default": null
           }
         },
         "required": [
@@ -709,20 +733,32 @@
             "default": null
           },
           "scroll_speed": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 1,
             "maximum": 120,
-            "description": "Override marquee speed for this item in pixels per second."
+            "description": "Override marquee speed for this item in pixels per second.",
+            "default": null
           },
           "scroll_pause": {
-            "type": "number",
+            "type": [
+              "number",
+              "null"
+            ],
             "minimum": 0,
-            "maximum": 10
+            "maximum": 10,
+            "default": null
           },
           "scroll_gap": {
-            "type": "integer",
+            "type": [
+              "integer",
+              "null"
+            ],
             "minimum": 8,
-            "maximum": 256
+            "maximum": 256,
+            "default": null
           }
         },
         "required": [
