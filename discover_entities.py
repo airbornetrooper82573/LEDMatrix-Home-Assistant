@@ -3,10 +3,8 @@
 
 import json
 import os
-import ssl
 import sys
-import urllib.error
-import urllib.request
+import requests
 from pathlib import Path
 
 
@@ -56,36 +54,92 @@ def main():
 
     endpoint = "/api/" if mode == "validate" else "/api/states"
     request_url = f"{ha_url}{endpoint}"
-    req = urllib.request.Request(
-        request_url,
-        headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-            "User-Agent": "LEDMatrix-Home-Assistant-Entity-Discovery/1.4.0",
-        },
-    )
-    context = None if verify_ssl else ssl._create_unverified_context()
+    session = requests.Session()
+    session.trust_env = False
+    headers = {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "LEDMatrix-Home-Assistant/1.4.4",
+    }
 
     try:
-        with urllib.request.urlopen(req, timeout=10, context=context) as response:
-            status_code = int(getattr(response, "status", 200) or 200)
-            response_text = response.read().decode("utf-8", errors="replace")
-            payload = json.loads(response_text)
-    except urllib.error.HTTPError as exc:
-        if exc.code == 401:
-            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request, endpoint=request_url, http_status=401, token_length=len(token), token_whitespace_removed=token_whitespace_removed)
-        if exc.code == 403:
-            return fail("Home Assistant denied access (403 Forbidden). Check the token permissions.", interactive_request, endpoint=request_url, http_status=403)
-        return fail(f"Home Assistant returned HTTP {exc.code}: {exc.reason}", interactive_request, endpoint=request_url, http_status=exc.code)
-    except urllib.error.URLError as exc:
-        reason = str(getattr(exc, "reason", exc))
-        if "CERTIFICATE_VERIFY_FAILED" in reason or "certificate verify failed" in reason.lower():
-            return fail("SSL certificate validation failed. Fix the certificate or disable Verify SSL for a trusted local Home Assistant instance.", interactive_request, endpoint=request_url)
-        return fail(f"Home Assistant URL is not reachable: {reason}", interactive_request, endpoint=request_url)
-    except TimeoutError:
-        return fail("Timed out connecting to Home Assistant. Check the URL and network path.", interactive_request, endpoint=request_url)
-    except Exception as exc:
-        return fail(f"Home Assistant connection failed: {exc}", interactive_request, endpoint=request_url)
+        response = session.get(
+            request_url,
+            headers=headers,
+            timeout=10,
+            verify=verify_ssl,
+            allow_redirects=False,
+        )
+        status_code = response.status_code
+
+        if status_code in (301, 302, 303, 307, 308):
+            return fail(
+                "Home Assistant URL redirected. Use the final Home Assistant URL directly.",
+                interactive_request,
+                endpoint=request_url,
+                http_status=status_code,
+                redirect_location=response.headers.get("Location", ""),
+                transport="requests-direct",
+            )
+        if status_code == 401:
+            return fail(
+                "Home Assistant rejected the token (401 Unauthorized).",
+                interactive_request,
+                endpoint=request_url,
+                http_status=401,
+                token_length=len(token),
+                token_whitespace_removed=token_whitespace_removed,
+                transport="requests-direct",
+            )
+        if status_code == 403:
+            return fail(
+                "Home Assistant denied access (403 Forbidden).",
+                interactive_request,
+                endpoint=request_url,
+                http_status=403,
+                transport="requests-direct",
+            )
+        if not response.ok:
+            return fail(
+                f"Home Assistant returned HTTP {status_code}: {response.reason}",
+                interactive_request,
+                endpoint=request_url,
+                http_status=status_code,
+                transport="requests-direct",
+            )
+
+        try:
+            payload = response.json()
+        except ValueError:
+            return fail(
+                "Home Assistant returned a non-JSON response.",
+                interactive_request,
+                endpoint=request_url,
+                http_status=status_code,
+                transport="requests-direct",
+            )
+    except requests.exceptions.SSLError as exc:
+        return fail(
+            f"SSL certificate validation failed: {exc}",
+            interactive_request,
+            endpoint=request_url,
+            transport="requests-direct",
+        )
+    except requests.exceptions.Timeout:
+        return fail(
+            "Timed out connecting to Home Assistant.",
+            interactive_request,
+            endpoint=request_url,
+            transport="requests-direct",
+        )
+    except requests.exceptions.RequestException as exc:
+        return fail(
+            f"Home Assistant URL is not reachable: {exc}",
+            interactive_request,
+            endpoint=request_url,
+            transport="requests-direct",
+        )
 
     if mode == "validate":
         message = "Home Assistant API authenticated successfully."
@@ -99,6 +153,7 @@ def main():
             "http_status": status_code,
             "token_length": len(token),
             "token_whitespace_removed": token_whitespace_removed,
+            "transport": "requests-direct",
         })
 
     states = payload
@@ -146,6 +201,7 @@ def main():
         "entities": results[:250],
         "endpoint": request_url,
         "http_status": status_code,
+        "transport": "requests-direct",
     })
 
 
