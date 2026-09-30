@@ -139,7 +139,7 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
       button.disabled=true;button.textContent='Searching...';status.textContent='Connecting to Home Assistant...';results.style.display='none';results.innerHTML='';
       try{
         var resp=await fetch('/api/v3/plugins/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          plugin_id:pluginId,action_id:'discover-entities',params:{mode:'discover',ha_url:haUrl,ha_token:haToken,verify_ssl:verifySsl!==false,query:query.value||'',domain:domain.value||'all'}
+          plugin_id:pluginId,action_id:'discover-entities',params:{mode:'discover',ha_url:haUrl,ha_token:haToken,verify_ssl:(verifySsl!==false?'true':'false'),query:query.value||'',domain:domain.value||'all'}
         })});
         var data=await resp.json();
         var payload=null;
