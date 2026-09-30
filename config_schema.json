@@ -579,26 +579,16 @@
             "description": "Entity ID. Use the Entity Browser above to search and add entities automatically."
           },
           "to": {
-            "type": "array",
-            "items": {
-              "type": [
-                "string",
-                "number",
-                "boolean"
-              ]
-            },
-            "default": []
+            "type": "string",
+            "default": "",
+            "title": "Trigger when state becomes",
+            "description": "Optional comma-separated target state(s), for example on, detected, open. Leave blank for any new state."
           },
           "from": {
-            "type": "array",
-            "items": {
-              "type": [
-                "string",
-                "number",
-                "boolean"
-              ]
-            },
-            "default": []
+            "type": "string",
+            "default": "",
+            "title": "Trigger when previous state was",
+            "description": "Optional comma-separated previous state(s). Leave blank for any previous state."
           },
           "attribute_equals": {
             "type": "object",
