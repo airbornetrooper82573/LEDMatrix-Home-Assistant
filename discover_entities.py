@@ -5,6 +5,7 @@ import json
 import os
 import ssl
 import sys
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -58,6 +59,19 @@ def main():
     try:
         with urllib.request.urlopen(req, timeout=10, context=context) as response:
             payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request)
+        if exc.code == 403:
+            return fail("Home Assistant denied access (403 Forbidden). Check the token permissions.", interactive_request)
+        return fail(f"Home Assistant returned HTTP {exc.code}: {exc.reason}", interactive_request)
+    except urllib.error.URLError as exc:
+        reason = str(getattr(exc, "reason", exc))
+        if "CERTIFICATE_VERIFY_FAILED" in reason or "certificate verify failed" in reason.lower():
+            return fail("SSL certificate validation failed. Fix the certificate or disable Verify SSL for a trusted local Home Assistant instance.", interactive_request)
+        return fail(f"Home Assistant URL is not reachable: {reason}", interactive_request)
+    except TimeoutError:
+        return fail("Timed out connecting to Home Assistant. Check the URL and network path.", interactive_request)
     except Exception as exc:
         return fail(f"Home Assistant connection failed: {exc}", interactive_request)
 
