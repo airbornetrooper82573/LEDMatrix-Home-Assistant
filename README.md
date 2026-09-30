@@ -9,12 +9,13 @@ Displays Home Assistant entities, upcoming calendar events, and real-time text n
 - Home Assistant REST API using HA URL + Long-Lived Access Token
 - Persistent Home Assistant WebSocket connection for low-latency state changes
 - Entity cards for sensors, binary sensors, covers, locks, people, and more
+- Searchable Home Assistant Entity Browser with domain filters and one-click add actions
 - Upcoming events from one or more calendar entities
 - Wildcard notification rules such as \`binary_sensor.driveway_*\`
 - Attribute matching for integrations that expose object type in attributes
 - Native LEDMatrix **live-priority takeover** for alerts that should appear immediately
 - Per-rule priority override
-- Global and per-item text colors
+- Visual color pickers for global and per-item text colors — no hex typing required
 - Global and per-item marquee speed, pause, gap, and enable/disable
 - Pixel-width-aware scrolling for wide/multi-panel matrices
 - Notification duration, queue size, and cooldown controls
@@ -103,6 +104,18 @@ https://github.com/airbornetrooper82573/LEDMatrix-Home-Assistant
 }
 \`\`\`
 
+## Entity Browser
+
+Enter your Home Assistant URL and Long-Lived Access Token at the top of the plugin configuration page. The **Home Assistant Entity Browser** can then query `/api/states` and search by friendly name, entity ID, current state, domain, device class, or unit.
+
+Use the domain selector to narrow a large Home Assistant installation to sensors, binary sensors, calendars, cameras, covers, locks, people, weather, switches, climate entities, and more. Each search result can be added directly as an **Entity**, **Calendar**, or **Alert Rule** without copying an entity ID by hand.
+
+The token is sent only to the local LEDMatrix backend action that performs the Home Assistant request; the browser does not call Home Assistant directly, which avoids CORS problems.
+
+## Visual Colors
+
+The plugin now uses LEDMatrix's visual color controls instead of requiring typed hex values. Global entity/calendar/notification colors have clickable color pickers. Individual rows also expose visual color overrides in their advanced settings.
+
 ## Priority notifications
 
 \`notification_priority: true\` enables LEDMatrix's native live-priority path.
@@ -145,11 +158,11 @@ Global defaults can be set for scrolling and for entity/calendar/notification co
 - \`scroll_pause\`
 - \`scroll_gap\`
 
-Colors use \`#RRGGBB\` or \`#RGB\`. Scrolling is based on rendered pixel width rather than character count, which works well on larger chained matrices.
+Colors are selected visually in the LEDMatrix configuration UI. Scrolling is based on rendered pixel width rather than character count, which works well on larger chained matrices.
 
 ## Requirements
 
-- LEDMatrix 2.0.0+
+- LEDMatrix with plugin widget support (current LEDMatrix builds recommended)
 - Reachable Home Assistant instance
 - Home Assistant Long-Lived Access Token
 - Pillow
