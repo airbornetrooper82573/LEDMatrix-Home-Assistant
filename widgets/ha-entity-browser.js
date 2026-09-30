@@ -3,8 +3,8 @@
 if (!window.LEDMatrixWidgets) return;
 function esc(t){ return window.LEDEscape ? window.LEDEscape.html(String(t == null ? '' : t)) : String(t == null ? '' : t); }
 function sid(t){ return String(t).replace(/[^a-zA-Z0-9_-]/g,'_'); }
-function readField(name){
-  var el=document.querySelector('[name="'+name+'"]');
+function readField(root,name){
+  var el=root ? root.querySelector('[name="'+name+'"]') : null;
   if(!el)return '';
   return el.type==='checkbox'?el.checked:(el.value||'');
 }
@@ -51,14 +51,14 @@ function notificationDefaults(entity){
   else if(entity.domain==='lock') msg='{friendly_name} is {state}';
   return {title:title||'HOME ALERT',message:msg,to:entity.domain==='binary_sensor'?'on':'',priority:true};
 }
-function addToArray(pluginId,fieldKey,entity,kind){
+function addToArray(root,pluginId,fieldKey,entity,kind){
   var fieldId=(pluginId+'-'+fieldKey).replace(/\./g,'-').replace(/_/g,'-');
-  var addButton=document.querySelector('button[data-field-id="'+fieldId+'"]');
+  var addButton=(root||document).querySelector('button[data-field-id="'+fieldId+'"]');
   if(!addButton||typeof window.addArrayTableRow!=='function'){
     window.showNotification('Could not find the '+fieldKey+' configuration table.','error'); return;
   }
   window.addArrayTableRow(addButton);
-  var tbody=document.getElementById(fieldId+'_tbody');
+  var tbody=(root||document).querySelector('#'+fieldId+'_tbody');
   var rows=tbody?tbody.querySelectorAll('.array-table-row'):[];
   var row=rows.length?rows[rows.length-1]:null;
   if(!row){window.showNotification('Could not create a new configuration row.','error');return;}
@@ -87,6 +87,7 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
   name:'Home Assistant Entity Browser',version:'1.0.0',
   render:function(container,config,value,options){
     var pluginId=options.pluginId||'home-assistant';
+    var root=container.closest('form')||document.getElementById('plugin-config-form-'+pluginId)||container.parentElement;
     var fieldId=sid(options.fieldId||container.id);
     container.innerHTML=
       '<style>'+
@@ -133,7 +134,7 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
     syncValidationState(window.__HA_CONNECTION_VALIDATED__===true);
     document.addEventListener('ha-connection-validation',function(e){syncValidationState(e.detail&&e.detail.validated);});
     async function runSearch(){
-      var haUrl=readField('ha_url'),haToken=readField('ha_token'),verifySsl=readField('verify_ssl');
+      var haUrl=readField(root,'ha_url'),haToken=readField(root,'ha_token'),verifySsl=readField(root,'verify_ssl');
       if(!haUrl||!haToken){window.showNotification('Enter the Home Assistant URL and token first.','error');return;}
       button.disabled=true;button.textContent='Searching...';status.textContent='Connecting to Home Assistant...';results.style.display='none';results.innerHTML='';
       try{
@@ -163,9 +164,9 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
           meta.append(nm,id,st);
           var actions=document.createElement('div');actions.className='ha-actions';
           function btn(label,fn){var b=document.createElement('button');b.type='button';b.className='ha-btn';b.textContent=label;b.onclick=fn;actions.appendChild(b);}
-          btn('Add Entity',function(){addToArray(pluginId,'entities',entity,'entity');});
-          if(entity.domain==='calendar')btn('Add Calendar',function(){addToArray(pluginId,'calendars',entity,'calendar');});
-          btn('Add Alert Rule',function(){addToArray(pluginId,'event_notifications',entity,'notification');});
+          btn('Add Entity',function(){addToArray(root,pluginId,'entities',entity,'entity');});
+          if(entity.domain==='calendar')btn('Add Calendar',function(){addToArray(root,pluginId,'calendars',entity,'calendar');});
+          btn('Add Alert Rule',function(){addToArray(root,pluginId,'event_notifications',entity,'notification');});
           row.append(meta,actions);results.appendChild(row);
         });
         results.style.display='block';
