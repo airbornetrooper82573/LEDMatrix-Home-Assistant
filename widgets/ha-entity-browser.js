@@ -141,11 +141,16 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
           plugin_id:pluginId,action_id:'discover-entities',params:{mode:'discover',ha_url:haUrl,ha_token:haToken,verify_ssl:verifySsl!==false,query:query.value||'',domain:domain.value||'all'}
         })});
         var data=await resp.json();
-        if(!resp.ok||data.status!=='success')throw new Error(data.message||data.output||'Entity discovery failed');
-        var raw=String(data.output||'').trim(),payload=null,lines=raw.split(/\r?\n/).filter(Boolean);
-        for(var i=lines.length-1;i>=0;i--){try{payload=JSON.parse(lines[i]);if(payload&&typeof payload==='object')break;}catch(e){}}
+        var payload=null;
+        if(data && typeof data==='object' && Object.prototype.hasOwnProperty.call(data,'ok')){
+          payload=data;
+        }else{
+          if(!resp.ok||(data&&data.status==='error'))throw new Error((data&&data.message)||(data&&data.output)||'Entity discovery failed');
+          var raw=String((data&&data.output)||'').trim(),lines=raw.split(/\r?\n/).filter(Boolean);
+          for(var i=lines.length-1;i>=0;i--){try{payload=JSON.parse(lines[i]);if(payload&&typeof payload==='object')break;}catch(e){}}
+        }
         if(!payload)throw new Error('Could not parse Home Assistant response');
-        if(!payload.ok)throw new Error(payload.error||'Home Assistant entity search failed');
+        if(!payload.ok)throw new Error(payload.error||payload.message||'Home Assistant entity search failed');
         var entities=Array.isArray(payload.entities)?payload.entities:[];
         status.textContent=entities.length+' matching '+(entities.length===1?'entity':'entities')+' shown'+(payload.count>entities.length?' of '+payload.count:'')+'.';
         if(!entities.length){results.innerHTML='<div class="p-3 text-sm text-gray-500">No entities matched your search.</div>';results.style.display='block';return;}
