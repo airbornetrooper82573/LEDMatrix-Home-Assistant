@@ -34,6 +34,7 @@ function addToArray(pluginId,fieldKey,entity,kind){
   if(kind==='notification'){
     set('title',(entity.friendly_name||'HOME ALERT').toUpperCase());
     set('message','{friendly_name}: {state}');
+    if(entity.domain==='binary_sensor')set('to','on');
     set('priority',true);
   }
   window.showNotification(entity.entity_id+' added to '+fieldKey.replace(/_/g,' '),'success');
