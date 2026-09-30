@@ -685,6 +685,12 @@
         "priority"
       ],
       "maxItems": 50
+    },
+    "connection_validated": {
+      "type": "boolean",
+      "default": false,
+      "x-display": "hidden",
+      "description": "Internal flag indicating the saved Home Assistant connection was validated successfully."
     }
   },
   "required": [
