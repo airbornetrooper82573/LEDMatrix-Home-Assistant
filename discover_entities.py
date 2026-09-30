@@ -10,9 +10,15 @@ import urllib.request
 from pathlib import Path
 
 
-def fail(message, interactive=True):
-    print(json.dumps({"ok": False, "error": str(message), "entities": []}))
-    return 0 if interactive else 1
+def emit(payload, interactive=True, success=True):
+    print(json.dumps(payload))
+    return 0 if (success or interactive) else 1
+
+
+def fail(message, interactive=True, **extra):
+    payload = {"ok": False, "error": str(message), "entities": []}
+    payload.update(extra)
+    return emit(payload, interactive=interactive, success=False)
 
 
 def main():
@@ -46,8 +52,9 @@ def main():
         return fail("Enter a Home Assistant Long-Lived Access Token first.", interactive_request)
 
     endpoint = "/api/" if mode == "validate" else "/api/states"
+    request_url = f"{ha_url}{endpoint}"
     req = urllib.request.Request(
-        f"{ha_url}{endpoint}",
+        request_url,
         headers={
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -58,29 +65,36 @@ def main():
 
     try:
         with urllib.request.urlopen(req, timeout=10, context=context) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+            status_code = int(getattr(response, "status", 200) or 200)
+            response_text = response.read().decode("utf-8", errors="replace")
+            payload = json.loads(response_text)
     except urllib.error.HTTPError as exc:
         if exc.code == 401:
-            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request)
+            return fail("Home Assistant rejected the token (401 Unauthorized). Create or verify the Long-Lived Access Token.", interactive_request, endpoint=request_url, http_status=401)
         if exc.code == 403:
-            return fail("Home Assistant denied access (403 Forbidden). Check the token permissions.", interactive_request)
-        return fail(f"Home Assistant returned HTTP {exc.code}: {exc.reason}", interactive_request)
+            return fail("Home Assistant denied access (403 Forbidden). Check the token permissions.", interactive_request, endpoint=request_url, http_status=403)
+        return fail(f"Home Assistant returned HTTP {exc.code}: {exc.reason}", interactive_request, endpoint=request_url, http_status=exc.code)
     except urllib.error.URLError as exc:
         reason = str(getattr(exc, "reason", exc))
         if "CERTIFICATE_VERIFY_FAILED" in reason or "certificate verify failed" in reason.lower():
-            return fail("SSL certificate validation failed. Fix the certificate or disable Verify SSL for a trusted local Home Assistant instance.", interactive_request)
-        return fail(f"Home Assistant URL is not reachable: {reason}", interactive_request)
+            return fail("SSL certificate validation failed. Fix the certificate or disable Verify SSL for a trusted local Home Assistant instance.", interactive_request, endpoint=request_url)
+        return fail(f"Home Assistant URL is not reachable: {reason}", interactive_request, endpoint=request_url)
     except TimeoutError:
-        return fail("Timed out connecting to Home Assistant. Check the URL and network path.", interactive_request)
+        return fail("Timed out connecting to Home Assistant. Check the URL and network path.", interactive_request, endpoint=request_url)
     except Exception as exc:
-        return fail(f"Home Assistant connection failed: {exc}", interactive_request)
+        return fail(f"Home Assistant connection failed: {exc}", interactive_request, endpoint=request_url)
 
     if mode == "validate":
         message = "Home Assistant API authenticated successfully."
         if isinstance(payload, dict) and payload.get("message"):
             message = str(payload.get("message"))
-        print(json.dumps({"ok": True, "message": message, "entities": []}))
-        return 0
+        return emit({
+            "ok": True,
+            "message": message,
+            "entities": [],
+            "endpoint": request_url,
+            "http_status": status_code,
+        })
 
     states = payload
     if not isinstance(states, list):
@@ -121,8 +135,13 @@ def main():
         )
 
     results.sort(key=lambda x: (x["domain"], x["friendly_name"].lower(), x["entity_id"]))
-    print(json.dumps({"ok": True, "count": len(results), "entities": results[:250]}))
-    return 0
+    return emit({
+        "ok": True,
+        "count": len(results),
+        "entities": results[:250],
+        "endpoint": request_url,
+        "http_status": status_code,
+    })
 
 
 if __name__ == "__main__":
