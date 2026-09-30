@@ -94,19 +94,20 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
       '#'+fieldId+'_browser .ha-result{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.6rem .7rem;border-bottom:1px solid #e5e7eb}'+
       '#'+fieldId+'_browser .ha-result:last-child{border-bottom:0}'+
       '#'+fieldId+'_browser .ha-meta{min-width:0;flex:1}'+
-      '#'+fieldId+'_browser .ha-name{font-weight:600;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
-      '#'+fieldId+'_browser .ha-id{font-size:.75rem;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
-      '#'+fieldId+'_browser .ha-state{font-size:.75rem;color:#4b5563;margin-top:.15rem}'+
+      '#'+fieldId+'_browser{color:inherit}'+
+      '#'+fieldId+'_browser .ha-name{font-weight:600;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      '#'+fieldId+'_browser .ha-id{font-size:.75rem;color:var(--muted-text,#9ca3af);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      '#'+fieldId+'_browser .ha-state{font-size:.75rem;color:var(--muted-text,#9ca3af);margin-top:.15rem}'+
       '#'+fieldId+'_browser .ha-actions{display:flex;gap:.35rem;flex-wrap:wrap;justify-content:flex-end}'+
-      '#'+fieldId+'_browser .ha-btn{border:1px solid #d1d5db;border-radius:.375rem;padding:.3rem .5rem;font-size:.75rem;background:#fff;cursor:pointer}'+
-      '#'+fieldId+'_browser .ha-btn:hover{background:#f3f4f6}'+
+      '#'+fieldId+'_browser .ha-btn{border:1px solid var(--border-color,#4b5563);border-radius:.375rem;padding:.3rem .5rem;font-size:.75rem;background:transparent;color:inherit;cursor:pointer}'+
+      '#'+fieldId+'_browser .ha-btn:hover{background:rgba(127,127,127,.15)}'+
       '#'+fieldId+'_browser .ha-grid{display:grid;grid-template-columns:minmax(0,1fr) 150px auto;gap:.5rem}'+
       '@media(max-width:700px){#'+fieldId+'_browser .ha-grid{grid-template-columns:1fr}}'+
       '</style>'+
       '<div id="'+fieldId+'_browser">'+
       '<div class="ha-grid">'+
-      '<input id="'+fieldId+'_query" type="search" placeholder="Search by name, entity ID, state, device class..." class="form-input w-full rounded-md border-gray-300 shadow-sm bg-white text-black">'+
-      '<select id="'+fieldId+'_domain" class="form-select rounded-md border-gray-300 bg-white text-black">'+
+      '<input id="'+fieldId+'_query" type="search" placeholder="Search by name, entity ID, state, device class..." class="form-input w-full rounded-md shadow-sm" style="background:var(--input-bg,#111827);color:var(--text-color,#f9fafb);border-color:var(--border-color,#4b5563)">'+
+      '<select id="'+fieldId+'_domain" class="form-select rounded-md" style="background:var(--input-bg,#111827);color:var(--text-color,#f9fafb);border-color:var(--border-color,#4b5563)">'+
       '<option value="all">All domains</option><option value="sensor">Sensors</option><option value="binary_sensor">Binary sensors</option>'+
       '<option value="calendar">Calendars</option><option value="camera">Cameras</option><option value="cover">Covers</option>'+
       '<option value="lock">Locks</option><option value="light">Lights</option><option value="person">People</option>'+
@@ -114,7 +115,7 @@ window.LEDMatrixWidgets.register('ha-entity-browser',{
       '<option value="climate">Climate</option></select>'+
       '<button type="button" id="'+fieldId+'_search" class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md">Search Home Assistant</button>'+
       '</div><div id="'+fieldId+'_status" class="text-xs text-gray-500 mt-2">Enter your Home Assistant URL and token above, then search your entities.</div>'+
-      '<div id="'+fieldId+'_results" class="mt-3 border border-gray-200 rounded-lg overflow-hidden bg-white" style="display:none"></div>'+
+      '<div id="'+fieldId+'_results" class="mt-3 border rounded-lg overflow-hidden" style="display:none;background:var(--card-bg,transparent);border-color:var(--border-color,#4b5563)"></div>'+
       '<input type="hidden" name="'+esc(options.fullKey||'entity_browser')+'" value=""></div>';
     var query=container.querySelector('#'+fieldId+'_query');
     var domain=container.querySelector('#'+fieldId+'_domain');
