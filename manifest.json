@@ -1,7 +1,7 @@
 {
   "id": "home-assistant",
   "name": "Home Assistant",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Native Home Assistant display for LEDMatrix with validated setup flow, searchable entity discovery, smart presets, visual color controls, calendars, and real-time priority notifications.",
   "author": "airbornetrooper82573",
   "entry_point": "manager.py",
@@ -25,6 +25,12 @@
     ">=2.0.0"
   ],
   "versions": [
+    {
+      "version": "1.6.1",
+      "released": "2026-10-20",
+      "ledmatrix_min_version": "2.0.0",
+      "notes": "Skip the Home Assistant plugin entirely when no entity, calendar, or notification content is available instead of rendering a fallback message."
+    },
     {
       "version": "1.6.0",
       "released": "2026-09-30",
