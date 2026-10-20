@@ -722,8 +722,10 @@ class HomeAssistantPlugin(BasePlugin):
             self.last_error = ""
         else:
             self.current_item = None
-            if not self.last_error:
-                self.last_error = "No Home Assistant content configured"
+            # Empty Home Assistant content is not an error. Leave the plugin
+            # silent so LEDMatrix can continue to the next display item.
+            if self.last_error == "No Home Assistant content configured":
+                self.last_error = ""
 
     @staticmethod
     def _parse_color(value: Any, fallback=(255, 255, 255)):
@@ -851,18 +853,10 @@ class HomeAssistantPlugin(BasePlugin):
 
         return canvas
 
-    def _render(self) -> Image.Image:
-        if self.current_item is not None:
-            return self._render_item(self.current_item)
-        canvas = Image.new("RGB", (self.W, self.H), "black")
-        draw = ImageDraw.Draw(canvas)
-        draw.text(
-            (3, max(0, self.H // 2 - 4)),
-            self.last_error or "Waiting for Home Assistant",
-            font=self._font_subtitle,
-            fill="white",
-        )
-        return canvas
+    def _render(self) -> Optional[Image.Image]:
+        if self.current_item is None:
+            return None
+        return self._render_item(self.current_item)
 
     def _item_needs_scroll(self, item: Optional[DisplayItem]) -> bool:
         if item is None or not self._item_scroll_enabled(item):
@@ -892,17 +886,26 @@ class HomeAssistantPlugin(BasePlugin):
                     self.current_item = None
                 if self._active_notification is None:
                     self._activate_next_notification(priority_only=False)
-                if (
-                    self._active_notification is None
-                    and self.current_item is None
-                    and not self.last_error
-                ):
+                if self._active_notification is None and self.current_item is None:
                     self.update()
+
+            # No entity state, calendar event, or notification is currently
+            # available. Returning False tells LEDMatrix to skip this plugin
+            # without clearing or drawing over the current/next content.
+            if self.current_item is None:
+                try:
+                    self.display_manager.set_scrolling_state(False)
+                except Exception:
+                    pass
+                return False
 
             if force_clear:
                 self.display_manager.clear()
 
-            self.display_manager.image.paste(self._render(), (0, 0))
+            rendered = self._render()
+            if rendered is None:
+                return False
+            self.display_manager.image.paste(rendered, (0, 0))
             set_scroll = getattr(self.display_manager, "set_scrolling_state", None)
             if callable(set_scroll):
                 set_scroll(self._item_needs_scroll(self.current_item))
