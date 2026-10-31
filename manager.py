@@ -823,6 +823,10 @@ class HomeAssistantPlugin(BasePlugin):
         strip_width = max(width, advance + gap + width)
         strip = Image.new("RGB", (strip_width, row_h), "black")
         strip_draw = ImageDraw.Draw(strip)
+        # Match LEDMatrix core's 1-bit glyph mode. RGB-mode antialiasing
+        # creates partial-brightness edge pixels that shimmer on HUB75 panels
+        # as the integer-pixel crop advances.
+        strip_draw.fontmode = "1"
         baseline_y = -min(0, top)
         strip_draw.text((-left, baseline_y), text, font=font, fill=fill)
         if offset != 0:
