@@ -805,19 +805,22 @@ class HomeAssistantPlugin(BasePlugin):
         text_width = self._text_width(draw, text, font)
         offset = self._scroll_x(item, text_width, width, started_at)
 
-        if offset == 0:
-            draw.text((x, y), text, font=font, fill=fill)
+        # Always render inside a row-sized buffer, including the paused first
+        # frame. A full-height crop previously erased the rows below scrolling
+        # calendar titles; drawing offset=0 directly also bypassed clipping.
+        row_h = min(self.H - y, self._font_height(draw, font) + self.row_gap + 1)
+        width = min(width, self.W - x)
+        if row_h <= 0 or width <= 0:
             return
-
-        row_h = max(self.H, self._font_height(draw, font) + 4)
         row = Image.new("RGB", (width, row_h), "black")
         row_draw = ImageDraw.Draw(row)
         row_draw.text((offset, 0), text, font=font, fill=fill)
-        row_draw.text(
-            (offset + text_width + self._item_scroll_gap(item), 0),
-            text, font=font, fill=fill
-        )
-        canvas.paste(row.crop((0, 0, width, min(row_h, self.H - y))), (x, y))
+        if offset != 0:
+            row_draw.text(
+                (offset + text_width + self._item_scroll_gap(item), 0),
+                text, font=font, fill=fill
+            )
+        canvas.paste(row, (x, y))
 
     def _render_item(self, item: DisplayItem) -> Image.Image:
         canvas = Image.new("RGB", (self.W, self.H), "black")
