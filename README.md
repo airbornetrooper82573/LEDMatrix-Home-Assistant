@@ -2,6 +2,11 @@
 
 ## Change notes
 
+### 1.6.4 — 2026-10-31
+- Match the LEDMatrix core's 1-bit pixel-font rendering for scrolling text, eliminating Pillow's anti-aliased fractional-brightness glyph edges in the plugin's RGB strip.
+- Keep integer-pixel crop scrolling, calendar layout, user-selected font sizes and colors, and live web preview settings unchanged.
+- Targeted follow-up for physical-panel glyph distortion that persisted at 5 px/s with scan-order compensation disabled. Requires on-device verification.
+
 ### 1.6.3 — 2026-10-31
 - Follow-up physical-display fix: long calendar titles rendered correctly while paused but became distorted after scrolling began.
 - Rasterize long text into a positive-coordinate RGB strip and scroll by integer-pixel cropping instead of drawing characters at negative X positions each frame.
