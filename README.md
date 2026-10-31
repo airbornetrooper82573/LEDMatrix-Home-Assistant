@@ -2,6 +2,12 @@
 
 ## Change notes
 
+### 1.6.5 — 2026-10-31 (diagnostic)
+- Temporarily prevent Home Assistant calendar animation from enabling LEDMatrix's core scrolling-state mode while preserving its existing time-based text movement.
+- Explicitly clear inherited scroll state before presenting a frame, isolating scroll-specific scanout/refresh behavior from the plugin's text rendering.
+- This is a controlled troubleshooting release, **not a confirmed fix**. If it helps, the underlying scrolling-state integration needs a proper correction; if not, examine frame pacing, content updates, and physical framebuffer diagnostics.
+- Normal static display, calendar content, fonts, color choices, and preview are unchanged. Physical motion may become less smooth with dirty tracking enabled.
+
 ### 1.6.4 — 2026-10-31
 - Match the LEDMatrix core's 1-bit pixel-font rendering for scrolling text, eliminating Pillow's anti-aliased fractional-brightness glyph edges in the plugin's RGB strip.
 - Keep integer-pixel crop scrolling, calendar layout, user-selected font sizes and colors, and live web preview settings unchanged.
