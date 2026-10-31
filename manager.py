@@ -921,9 +921,14 @@ class HomeAssistantPlugin(BasePlugin):
             if rendered is None:
                 return False
             self.display_manager.image.paste(rendered, (0, 0))
+            # Diagnostic: let LEDMatrix present this plugin's moving frames as
+            # ordinary images. This isolates core scrolling-state pacing and
+            # scanout from the calendar's own time-based pixel movement.
+            # Still explicitly reset state to prevent a previous plugin's
+            # scrolling flag from leaking into Home Assistant.
             set_scroll = getattr(self.display_manager, "set_scrolling_state", None)
             if callable(set_scroll):
-                set_scroll(self._item_needs_scroll(self.current_item))
+                set_scroll(False)
             self.display_manager.update_display()
             return True
         except Exception as exc:
