@@ -2,6 +2,12 @@
 
 ## Change notes
 
+### 1.6.3 — 2026-10-31
+- Follow-up physical-display fix: long calendar titles rendered correctly while paused but became distorted after scrolling began.
+- Rasterize long text into a positive-coordinate RGB strip and scroll by integer-pixel cropping instead of drawing characters at negative X positions each frame.
+- Keep text isolated to its own row and preserve existing scrolling speed, colors, and configuration.
+- Requires verification on the Raspberry Pi LEDMatrix hardware; browser preview alone does not validate physical scanout.
+
 ### 1.6.2 — 2026-10-31
 - Fix long calendar text overwriting neighboring rows on the physical LEDMatrix during scrolling.
 - Clip each text row to its own bounded offscreen RGB image, instead of pasting a display-height black buffer.
