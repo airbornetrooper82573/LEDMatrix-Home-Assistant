@@ -812,15 +812,23 @@ class HomeAssistantPlugin(BasePlugin):
         width = min(width, self.W - x)
         if row_h <= 0 or width <= 0:
             return
-        row = Image.new("RGB", (width, row_h), "black")
-        row_draw = ImageDraw.Draw(row)
-        row_draw.text((offset, 0), text, font=font, fill=fill)
+        # Rasterize stationary text once, then scroll by cropping the pixel
+        # strip. Drawing glyphs at negative X coordinates on each frame can
+        # produce corrupted moving text in the Raspberry Pi Pillow renderer.
+        # Cropping also keeps every frame within this row's bounds.
+        bounds = draw.textbbox((0, 0), text, font=font)
+        left, top, right, bottom = bounds
+        advance = max(text_width, int(draw.textlength(text, font=font)))
+        gap = self._item_scroll_gap(item)
+        strip_width = max(width, advance + gap + width)
+        strip = Image.new("RGB", (strip_width, row_h), "black")
+        strip_draw = ImageDraw.Draw(strip)
+        baseline_y = -min(0, top)
+        strip_draw.text((-left, baseline_y), text, font=font, fill=fill)
         if offset != 0:
-            row_draw.text(
-                (offset + text_width + self._item_scroll_gap(item), 0),
-                text, font=font, fill=fill
-            )
-        canvas.paste(row, (x, y))
+            strip_draw.text((advance + gap - left, baseline_y), text, font=font, fill=fill)
+        crop_x = min(max(0, -offset), strip_width - width)
+        canvas.paste(strip.crop((crop_x, 0, crop_x + width, row_h)), (x, y))
 
     def _render_item(self, item: DisplayItem) -> Image.Image:
         canvas = Image.new("RGB", (self.W, self.H), "black")
