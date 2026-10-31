@@ -1,5 +1,15 @@
 # LEDMatrix Home Assistant
 
+## Change notes
+
+### 1.6.2 — 2026-10-31
+- Fix long calendar text overwriting neighboring rows on the physical LEDMatrix during scrolling.
+- Clip each text row to its own bounded offscreen RGB image, instead of pasting a display-height black buffer.
+- Use identical clipped rendering for the initial paused frame and scrolling frames, preventing frame-to-frame differences.
+- Preserve existing configuration, per-calendar colors, font sizes, and scrolling speeds. The web UI preview is unchanged.
+- Hardware verification on the five-panel Raspberry Pi LEDMatrix is still required.
+
+
 Native Home Assistant plugin for [ChuckBuilds/LEDMatrix](https://github.com/ChuckBuilds/LEDMatrix).
 
 Displays Home Assistant entities, upcoming calendar events, and real-time text notifications such as **Person detected in driveway** or **Vehicle detected at front door**. Camera snapshots are intentionally out of scope; the focus is fast, readable information on an LED matrix.
